@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VampFlickz</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🦇</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Rajdhani:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#08050f;--surface:#130b22;--line:#2a1a47;
+  --magenta:#ff2e97;--cyan:#22e8ff;--text:#efe9ff;--dim:#a79bc4;
+  --display:'Orbitron','Segoe UI',system-ui,sans-serif;
+  --body:'Rajdhani','Segoe UI',system-ui,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box;margin:0}
+html{background:var(--bg)}
+body{background:radial-gradient(1200px 600px at 80% -10%,#2b0f4d55,transparent 60%),
+  radial-gradient(900px 500px at -10% 30%,#0b2a3a55,transparent 60%),var(--bg);
+  color:var(--text);font:500 1.05rem/1.5 var(--body);min-height:100vh}
+a,button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+
+/* HEADER */
+header{display:flex;flex-wrap:wrap;gap:.75rem;align-items:center;justify-content:space-between;
+  padding:1rem clamp(1rem,4vw,2.5rem);border-bottom:1px solid var(--line);
+  position:sticky;top:0;z-index:5;background:#08050fee;backdrop-filter:blur(14px)}
+.logo{font:800 clamp(1.3rem,3vw,2rem)/1 var(--display);letter-spacing:.04em;color:#ffe6f5;
+  text-shadow:0 0 6px var(--magenta),0 0 18px var(--magenta),0 0 42px #ff2e97aa;
+  animation:flicker 1.6s steps(1) 1;text-decoration:none;cursor:pointer}
+.logo span{color:#dffaff;text-shadow:0 0 6px var(--cyan),0 0 18px var(--cyan),0 0 42px #22e8ffaa}
+@keyframes flicker{0%,18%,22%,60%{opacity:.25}20%,40%,100%{opacity:1}}
+.search{background:var(--surface);border:1px solid var(--line);border-radius:999px;
+  padding:.45rem 1rem;width:min(100%,280px);transition:border-color .2s,box-shadow .2s}
+.search:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px #22e8ff33}
+.search::placeholder{color:var(--dim)}
+
+/* MAIN */
+main{padding:clamp(1rem,3vw,2rem)}
+
+/* HERO */
+.hero{border:1px solid var(--line);border-radius:18px;overflow:hidden;
+  margin-bottom:2rem;background:#0d0820;
+  display:grid;grid-template-columns:1fr 1.3fr;min-height:320px}
+@media(max-width:660px){.hero{grid-template-columns:1fr}}
+.hero-img{position:relative;overflow:hidden}
+.hero-img img{width:100%;height:100%;object-fit:cover;object-position:center top;display:block}
+.hero-img::after{content:"";position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent 50%,#0d0820 95%)}
+@media(max-width:660px){.hero-img{height:220px}
+  .hero-img::after{background:linear-gradient(to top,#0d0820 30%,transparent)}}
+.hero-body{padding:clamp(1.2rem,3vw,2.5rem);display:flex;flex-direction:column;
+  justify-content:center;gap:.85rem;position:relative;z-index:1}
+.hero-body::before{content:"";position:absolute;inset:0;
+  background:radial-gradient(500px 400px at 80% 50%,#ff2e9715,transparent);pointer-events:none}
+.badge{font:600 .78rem var(--display);letter-spacing:.1em;padding:.2rem .65rem;
+  border-radius:5px;align-self:flex-start}
+.badge-movie{background:#ff2e9720;border:1px solid #ff2e9750;color:var(--magenta)}
+.badge-tv{background:#22e8ff15;border:1px solid #22e8ff40;color:var(--cyan)}
+.hero-title{font:800 clamp(1.4rem,3vw,2.6rem)/1.1 var(--display)}
+.hero-desc{color:var(--dim);max-width:46ch;font-size:1rem}
+.btn{display:inline-flex;align-items:center;gap:.45rem;cursor:pointer;background:transparent;
+  border:2px solid var(--magenta);color:#fff;border-radius:9px;padding:.55rem 1.4rem;
+  font:600 .95rem var(--display);box-shadow:0 0 12px #ff2e9755,inset 0 0 12px #ff2e9733;
+  transition:background .2s,box-shadow .2s;align-self:flex-start}
+.btn:hover{background:#ff2e9725;box-shadow:0 0 24px #ff2e97aa,inset 0 0 18px #ff2e9755}
+
+/* SECTIONS */
+.sec-head{display:flex;align-items:center;gap:.75rem;margin-bottom:1.25rem}
+.sec-head h2{font:600 1.05rem var(--display);color:var(--cyan);
+  text-shadow:0 0 8px #22e8ff55;letter-spacing:.06em;white-space:nowrap}
+.sec-rule{flex:1;height:1px;background:var(--line)}
+
+/* GRID */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));
+  gap:1.1rem;margin-bottom:2rem}
+.card{all:unset;box-sizing:border-box;cursor:pointer;display:block;border-radius:12px;
+  background:var(--surface);border:1px solid var(--line);overflow:hidden;
+  transition:transform .2s,border-color .2s,box-shadow .2s}
+.card:hover,.card:focus-visible{transform:translateY(-4px);border-color:var(--cyan);
+  box-shadow:0 6px 28px #22e8ff40}
+.poster{aspect-ratio:2/3;overflow:hidden;background:#180c30;position:relative}
+.poster img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .3s}
+.card:hover .poster img{transform:scale(1.04)}
+.poster-fallback{width:100%;height:100%;display:grid;place-items:center;padding:1rem;
+  text-align:center;font:800 1.3rem/1.2 var(--display)}
+.poster-badge{position:absolute;top:.5rem;left:.5rem;font:600 .72rem var(--display);
+  padding:.18rem .5rem;border-radius:4px;letter-spacing:.07em}
+.card-info{padding:.7rem .9rem .9rem}
+.card-info b{display:block;font:600 1.05rem var(--body);margin-bottom:.1rem}
+.card-info small{color:var(--dim);font-size:.9rem}
+.no-results{color:var(--dim);padding:.5rem 0}
+
+/* PLAYER DIALOG */
+dialog{border:none;background:none;padding:0;width:min(1020px,96vw);max-height:96vh;margin:auto}
+dialog::backdrop{background:#04020bf8}
+.player{background:var(--surface);border:1px solid #ff2e9760;border-radius:14px;
+  box-shadow:0 0 50px #ff2e9730;overflow:hidden}
+.vid-wrap{aspect-ratio:16/9;background:#000;position:relative}
+.vid-wrap iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.player-bottom{padding:.9rem 1.2rem 1.2rem}
+.ep-row{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;margin-bottom:.6rem}
+.ep-row label{font:600 .9rem var(--display);color:var(--cyan)}
+.ep-select{background:#1a0b33;border:1px solid var(--line);border-radius:7px;
+  padding:.35rem .7rem;flex:1;min-width:0;transition:border-color .2s}
+.ep-select:focus{outline:none;border-color:var(--cyan)}
+.player-meta{display:flex;justify-content:space-between;align-items:flex-start;gap:.75rem;flex-wrap:wrap}
+.player-meta h3{font:600 1.15rem var(--display);margin-bottom:.15rem}
+.player-meta p{color:var(--dim);font-size:.95rem;max-width:55ch}
+.tip{margin-top:.4rem;font-size:.82rem;color:#5a4d72}
+.close-btn{cursor:pointer;background:none;border:1px solid var(--line);border-radius:7px;
+  padding:.3rem .8rem;flex:none;transition:border-color .2s;font-size:.9rem}
+.close-btn:hover{border-color:var(--cyan)}
+
+/* GATE */
+#gate{position:fixed;inset:0;z-index:10;display:none;place-items:center;
+  background:var(--bg);padding:1rem}
+#gate form{display:grid;gap:1rem;text-align:center;width:min(100%,320px)}
+.gate-err{color:var(--magenta);min-height:1.4em;font-size:.9rem}
+
+footer{padding:1.5rem;text-align:center;color:var(--dim);border-top:1px solid var(--line);font-size:.9rem}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<!-- GATE (optional passcode protection) -->
+<div id="gate">
+  <form id="gateForm">
+    <div class="logo" style="font-size:2rem;margin-bottom:.25rem">Vamp<span>Flickz</span></div>
+    <input class="search" id="passInput" type="password" placeholder="Family passcode" aria-label="Passcode" autocomplete="off" style="width:100%;border-radius:10px">
+    <button class="btn" type="submit" style="align-self:center">Enter</button>
+    <div class="gate-err" id="gateErr" role="alert"></div>
+  </form>
+</div>
+
+<header>
+  <div class="logo" onclick="closePlayer()">Vamp<span>Flickz</span></div>
+  <input class="search" id="searchBox" type="search" placeholder="Search…" aria-label="Search">
+</header>
+
+<main>
+  <div class="hero" id="heroEl"></div>
+
+  <div class="sec-head"><h2>Movies</h2><div class="sec-rule"></div></div>
+  <div class="grid" id="movieGrid"></div>
+
+  <div class="sec-head"><h2>TV Shows</h2><div class="sec-rule"></div></div>
+  <div class="grid" id="tvGrid"></div>
+
+  <p class="no-results" id="noResults" hidden>No results.</p>
+</main>
+
+<footer>VampFlickz &mdash; family movie night, no ads.</footer>
+
+<dialog id="playerDialog" aria-label="Video player">
+  <div class="player">
+    <div class="vid-wrap" id="vidWrap"></div>
+    <div class="player-bottom">
+      <div class="ep-row" id="epRow" hidden>
+        <label for="epSelect">Episode</label>
+        <select class="ep-select" id="epSelect"></select>
+      </div>
+      <div class="player-meta">
+        <div>
+          <h3 id="pTitle"></h3>
+          <p id="pDesc"></p>
+          <p class="tip">Video not loading? Drive may still be processing — wait a minute and refresh. Make sure sharing is set to "Anyone with the link."</p>
+        </div>
+        <button class="close-btn" id="closeBtn">✕ Close</button>
+      </div>
+    </div>
+  </div>
+</dialog>
+
+<script>
+/* ══════════════════════════════════════════════════════
+   SETTINGS
+   ══════════════════════════════════════════════════════ */
+
+const PASSCODE = ''; // Set a passcode or leave '' for open access
+
+/* ── CONTENT ─────────────────────────────────────────────────────────
+   For movies:  set "drive" to the individual video file share link.
+   For TV shows: set "folderIds" for each season folder.
+                 Each season folder must be shared "Anyone with the link".
+                 Episodes will be listed inside the player via Drive API.
+
+   IMPORTANT: Individual video files inside each folder also need to be
+   shared "Anyone with the link" for playback to work.
+   ────────────────────────────────────────────────────────────────── */
+
+const CONTENT = [
+  {
+    id: 'avatar-aang-2026', type: 'movie',
+    title: 'Avatar Aang: The Last Airbender', year: 2026,
+    desc: 'Avatar Aang and his friends return in an all-new animated sequel, continuing the story of the original series with the gang all grown up.',
+    drive: 'https://drive.google.com/file/d/1ZkfaS3aiatH15BVs7rcESg9Ju4efiASv/view?usp=sharing',
+    folderId: '15FpHIO007u2VrSQHIU8qIIK8HMawoUXD',
+    poster: 'https://image.tmdb.org/t/p/w500/3sgnSfNT27Bx5O5ukr7B26mhEQq.jpg'
+  },
+  {
+    id: 'michael-2026', type: 'movie',
+    title: 'Michael', year: 2026,
+    desc: 'The life story of the King of Pop — from his early days with the Jackson 5 to becoming the most iconic entertainer in history. Directed by Antoine Fuqua.',
+    drive: 'https://drive.google.com/file/d/1wMjLH-4wvrg78Fx7RjxXwrC2nR_1Jeir/view?usp=sharing',
+    folderId: '1ASydUKU_ZDJSuTIsK_bL_RElgd15E-KQ',
+    poster: 'https://image.tmdb.org/t/p/w500/nBJB5xBazUbhYTQff0MlEGJf2Bq.jpg'
+  },
+  {
+    id: 'spiderman-bnd', type: 'movie',
+    title: 'Spider-Man: Brand New Day', year: 2026,
+    desc: 'Peter Parker erases himself from everyone\'s memory and operates as a full-time Spider-Man in a New York City that no longer knows his name.',
+    drive: 'https://drive.google.com/file/d/1qPfL0R5ip15Hccsbb-pD5aT0bBM8Cvtz/view?usp=sharing',
+    folderId: '1xgLfuYvTSfiLoNyX65pttacuQ59Tb4Df',
+    poster: 'https://www.superherohype.com/wp-content/uploads/sites/4/2026/07/Spider-Man-Brand-New-Day-Official-Poster.jpg'
+  },
+  {
+    id: 'the-good-place', type: 'tv',
+    title: 'The Good Place', year: '2016–2020',
+    desc: 'Eleanor Shellstrop accidentally ends up in the afterlife\'s Good Place. An NBC comedy about ethics, philosophy, and what it means to be a good person.',
+    poster: 'https://image.tmdb.org/t/p/w500/xFoKWGEPYDsXk9MBLnEgLwqEp4V.jpg',
+    seasons: [
+      { label: 'Season 1', folderId: '17DuywcKI60HmJXCbplTiP9zZ-F-fBwrv' },
+      { label: 'Season 2', folderId: '1shoGxYnmBSbHE8A6-fqeMBbXCV-zTUuu' },
+      { label: 'Season 3', folderId: '1gII6NW0s_VOZ3rABi9Xo_0ChvKYTdVWV' },
+      { label: 'Season 4', folderId: '1hrt6TI3EmLPnV3YNQ0Fy9LZkKnHJpA8K' }
+    ]
+  }
+];
+
+/* ══════════════════════════════════════════════════════
+   UTILITIES
+   ══════════════════════════════════════════════════════ */
+const $ = s => document.querySelector(s);
+const dlg = $('#playerDialog'), vidWrap = $('#vidWrap');
+
+function esc(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function hue(s){ let h=0; for(const c of s) h=(h*31+c.charCodeAt(0))%360; return h; }
+function gradBg(item){ const h=hue(item.title); return `background:linear-gradient(155deg,hsl(${h} 80% 16%),hsl(${(h+80)%360} 85% 9%))`; }
+function driveId(v){
+  if(!v) return null;
+  const m = String(v).match(/\/d\/([\w-]+)/) || String(v).match(/[?&]id=([\w-]+)/);
+  return m ? m[1] : String(v).trim() || null;
+}
+
+/* ══════════════════════════════════════════════════════
+   RENDER CARDS
+   ══════════════════════════════════════════════════════ */
+function makeCard(item){
+  const bc = item.type==='tv'?'badge-tv':'badge-movie';
+  const bl = item.type==='tv'?'TV':'MOVIE';
+  const posterHtml = item.poster
+    ? `<img src="${esc(item.poster)}" alt="${esc(item.title)}" loading="lazy" onerror="this.closest('.poster').innerHTML='<div class=poster-fallback style=\\'${gradBg(item)}\\'>${esc(item.title)}</div>'">`
+    : `<div class="poster-fallback" style="${gradBg(item)}">${esc(item.title)}</div>`;
+  return `<button class="card" data-id="${esc(item.id)}" aria-label="${item.type==='tv'?'Browse':'Watch'} ${esc(item.title)}">
+    <div class="poster">${posterHtml}<span class="poster-badge ${bc}">${bl}</span></div>
+    <div class="card-info"><b>${esc(item.title)}</b><small>${esc(String(item.year))}</small></div>
+  </button>`;
+}
+
+function renderAll(list){
+  const movies = list.filter(x=>x.type==='movie');
+  const tv     = list.filter(x=>x.type==='tv');
+  $('#movieGrid').innerHTML = movies.map(makeCard).join('') || '<p class="no-results">No movies yet.</p>';
+  $('#tvGrid').innerHTML    = tv.map(makeCard).join('') || '<p class="no-results">No shows yet.</p>';
+  $('#noResults').hidden    = true;
+}
+
+/* ══════════════════════════════════════════════════════
+   HERO
+   ══════════════════════════════════════════════════════ */
+function renderHero(){
+  const f = CONTENT[0];
+  if(!f){ $('#heroEl').hidden=true; return; }
+  const bc = f.type==='tv'?'badge-tv':'badge-movie';
+  const bl = f.type==='tv'?'TV Show':'Movie';
+  $('#heroEl').innerHTML = `
+    ${f.poster?`<div class="hero-img"><img src="${esc(f.poster)}" alt="${esc(f.title)}" loading="eager"></div>`:''}
+    <div class="hero-body">
+      <span class="badge ${bc}">${bl}</span>
+      <h1 class="hero-title">${esc(f.title)}</h1>
+      <p class="hero-desc">${esc(f.desc)}</p>
+      <button class="btn" data-id="${esc(f.id)}">▶&nbsp;Play</button>
+    </div>`;
+}
+
+/* ══════════════════════════════════════════════════════
+   OPEN CONTENT
+   ══════════════════════════════════════════════════════ */
+function embedFrame(fileId, title=''){
+  return `<iframe src="https://drive.google.com/file/d/${encodeURIComponent(fileId)}/preview"
+    allow="autoplay;fullscreen" allowfullscreen title="${esc(title)}"></iframe>`;
+}
+
+function noFileMsg(msg='Paste the video file\'s Drive link into the CONTENT list to watch.'){
+  return `<div style="position:absolute;inset:0;display:grid;place-items:center;padding:2rem;text-align:center;color:#6d5e8a;font-family:var(--body)">${msg}</div>`;
+}
+
+async function openContent(id){
+  const item = CONTENT.find(x=>x.id===id);
+  if(!item) return;
+  $('#pTitle').textContent = item.title;
+  $('#pDesc').textContent  = item.desc;
+
+  const epRow    = $('#epRow');
+  const epSelect = $('#epSelect');
+  epRow.hidden   = true;
+  epSelect.innerHTML = '';
+
+  if(item.type==='movie'){
+    // Direct file link wins; otherwise open Drive folder
+    const fid = driveId(item.drive);
+    vidWrap.innerHTML = fid ? embedFrame(fid, item.title)
+      : (item.folderId
+          ? `<div style="position:absolute;inset:0;display:grid;place-items:center;padding:2rem;text-align:center;color:#6d5e8a;font-family:var(--body)">
+               Open the folder, click the video file, share it "Anyone with the link," then paste that link into the <code>drive:</code> field in the site code.
+               <br><br><a href="https://drive.google.com/drive/folders/${esc(item.folderId)}" target="_blank" style="color:var(--cyan)">Open Drive folder →</a></div>`
+          : noFileMsg());
+
+  } else {
+    // TV show — season/episode picker
+    const seasons = item.seasons || [];
+    if(!seasons.length){ vidWrap.innerHTML = noFileMsg('No seasons configured.'); }
+    else {
+      epRow.hidden = false;
+
+      // Populate season options
+      seasons.forEach((s,i) => {
+        const o = document.createElement('option');
+        o.value = i; o.textContent = s.label;
+        epSelect.appendChild(o);
+      });
+
+      function loadSeason(idx){
+        const season = seasons[idx];
+        vidWrap.innerHTML = `<div style="position:absolute;inset:0;display:grid;place-items:center;padding:2rem;text-align:center;color:#6d5e8a;font-family:var(--body)">
+          Loading ${esc(season.label)}…<br><br>
+          <a href="https://drive.google.com/drive/folders/${esc(season.folderId)}" target="_blank"
+             style="color:var(--cyan);font-family:var(--display);font-size:.85rem">
+            Open ${esc(season.label)} folder →</a>
+          <br><br>
+          <span style="font-size:.85rem;opacity:.6">Pick an episode from the folder and paste its share link into the seasons config to play inline.</span></div>`;
+      }
+
+      epSelect.addEventListener('change', e => loadSeason(+e.target.value));
+      loadSeason(0);
+    }
+  }
+
+  if(!dlg.open) dlg.showModal();
+  history.replaceState(null,'','#'+id);
+}
+
+function closePlayer(){
+  vidWrap.innerHTML = '';
+  if(dlg.open) dlg.close();
+  history.replaceState(null,'',location.pathname+location.search);
+}
+
+/* ══════════════════════════════════════════════════════
+   EVENTS
+   ══════════════════════════════════════════════════════ */
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-id]');
+  if(t) openContent(t.dataset.id);
+});
+$('#closeBtn').addEventListener('click', closePlayer);
+$('#playerDialog').addEventListener('cancel', e => { e.preventDefault(); closePlayer(); });
+$('#playerDialog').addEventListener('click', e => { if(e.target===$('#playerDialog')) closePlayer(); });
+$('#searchBox').addEventListener('input', e => {
+  const q = e.target.value.trim().toLowerCase();
+  renderAll(q ? CONTENT.filter(x=>x.title.toLowerCase().includes(q)||x.desc.toLowerCase().includes(q)) : CONTENT);
+});
+
+/* ══════════════════════════════════════════════════════
+   BOOT
+   ══════════════════════════════════════════════════════ */
+function start(){
+  renderHero();
+  renderAll(CONTENT);
+  if(location.hash.length>1) openContent(decodeURIComponent(location.hash.slice(1)));
+}
+
+if(PASSCODE){
+  let ok=false;
+  try{ ok=localStorage.getItem('vf-ok')===PASSCODE; }catch(e){}
+  if(ok){ start(); }
+  else {
+    $('#gate').style.display='grid';
+    $('#gateForm').addEventListener('submit', e => {
+      e.preventDefault();
+      if($('#passInput').value===PASSCODE){
+        try{ localStorage.setItem('vf-ok',PASSCODE); }catch(e){}
+        $('#gate').style.display='none'; start();
+      } else {
+        $('#gateErr').textContent='Wrong passcode — try again.';
+      }
+    });
+  }
+} else { start(); }
+</script>
+</body>
+</html>
