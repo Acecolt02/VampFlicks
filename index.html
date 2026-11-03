@@ -101,6 +101,8 @@ dialog::backdrop{background:#04020bf8}
   box-shadow:0 0 50px #ff2e9730;overflow:hidden}
 .vid-wrap{aspect-ratio:16/9;background:#000;position:relative}
 .vid-wrap iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+/* Block the Drive "open in new tab" button that appears top-right of the embed */
+.vid-wrap::after{content:"";position:absolute;top:0;right:0;width:60px;height:50px;z-index:2;background:transparent}
 .player-bottom{padding:.9rem 1.2rem 1.2rem}
 .ep-row{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;margin-bottom:.6rem}
 .ep-row label{font:600 .9rem var(--display);color:var(--cyan)}
@@ -293,7 +295,9 @@ function renderHero(){
    ══════════════════════════════════════════════════════ */
 function embedFrame(fileId, title=''){
   return `<iframe src="https://drive.google.com/file/d/${encodeURIComponent(fileId)}/preview"
-    allow="autoplay;fullscreen" allowfullscreen title="${esc(title)}"></iframe>`;
+    allow="autoplay;fullscreen" allowfullscreen title="${esc(title)}"
+    sandbox="allow-scripts allow-same-origin allow-forms allow-popups-to-escape-sandbox"
+    referrerpolicy="no-referrer"></iframe>`;
 }
 
 function noFileMsg(msg='Paste the video file\'s Drive link into the CONTENT list to watch.'){
