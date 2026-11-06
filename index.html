@@ -298,14 +298,14 @@ footer{padding:1.25rem;padding-bottom:calc(1.25rem + var(--sab));
       <button class="wm-tab" id="tabJoin" onclick="wmTab('join')">Join a Room</button>
     </div>
     <div id="panelHost">
-      <p>Copy the link and send it to your friend — the movie opens instantly when they click it.</p>
+      <p>Send your friend the link (opens instantly) or give them the room code below.</p>
       <div class="code-display" id="wmCode">——</div>
       <div class="wm-status" id="wmHostStatus">Open a movie first, then click Watch Together.</div>
     </div>
     <div id="panelJoin" hidden>
-      <p>Paste the link your friend sent you.</p>
-      <input class="wm-input" id="wmJoinInput" maxlength="200" placeholder="Paste link here…"
-             autocomplete="off" spellcheck="false" inputmode="url"
+      <p>Enter the 6-character room code, or paste the link your friend sent you.</p>
+      <input class="wm-input" id="wmJoinInput" maxlength="300" placeholder="Room code or link…"
+             autocomplete="off" spellcheck="false" inputmode="text" autocapitalize="characters"
              style="font-size:.9rem;letter-spacing:0;text-transform:none">
       <div class="wm-status" id="wmJoinStatus"></div>
     </div>
@@ -687,6 +687,43 @@ document.addEventListener('click', e => {
   }
 })();
 
+/* Room codes: a 6-char code computed from each title's ID (FNV-1a hash,
+   unambiguous alphabet). Every device has the same CONTENT list, so every
+   device computes the same codes — joining works anywhere, no backend. */
+const _WM_ALPHA = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no I, O, 0, 1
+function _wmHash(str){
+  let h = 0x811c9dc5;
+  for(let i=0;i<str.length;i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+  return h >>> 0;
+}
+function _wmMakeCode(id, salt){
+  let h = _wmHash(id + '|' + salt), out = '';
+  for(let i=0;i<6;i++){
+    out += _WM_ALPHA[h % 32]; h = Math.floor(h / 32);
+    if(i === 5) break;
+    if(h === 0) h = _wmHash(id + '#' + i + '|' + salt);
+  }
+  return out;
+}
+let _wmCodeMap = null; // code -> id
+function _wmBuildCodes(){
+  _wmCodeMap = {};
+  CONTENT.forEach(item => {
+    let salt = 0, code = _wmMakeCode(item.id, salt);
+    while(_wmCodeMap[code]) code = _wmMakeCode(item.id, ++salt); // resolve collisions deterministically
+    _wmCodeMap[code] = item.id;
+  });
+}
+function wmCodeFor(id){
+  if(!_wmCodeMap) _wmBuildCodes();
+  for(const c in _wmCodeMap) if(_wmCodeMap[c] === id) return c;
+  return '——';
+}
+function wmIdForCode(code){
+  if(!_wmCodeMap) _wmBuildCodes();
+  return _wmCodeMap[code] || null;
+}
+
 function wmGetShareLink(movieId){
   const base = location.href.split('?')[0].split('#')[0];
   return base + '?watch=' + encodeURIComponent(movieId);
@@ -716,10 +753,10 @@ function wmBuildHostPanel(){
     return;
   }
   const link = wmGetShareLink(movieId);
-  // Show a short code derived from the movie ID for easy typing
-  const shortCode = btoa(movieId).replace(/[^A-Z0-9]/gi,'').toUpperCase().slice(0,6);
+  // Deterministic code — same on every device, so no server/localStorage needed
+  const shortCode = wmCodeFor(movieId);
   $('#wmCode').textContent = shortCode;
-  $('#wmHostStatus').textContent = 'Send the link to your friend — movie opens instantly.';
+  $('#wmHostStatus').textContent = 'Send the link or give your friend this code.';
   $('#wmHostStatus').className = 'wm-status waiting';
   // Store link for copy button
   $('#wmActionBtn').dataset.link = link;
@@ -728,26 +765,26 @@ function wmBuildHostPanel(){
 
 function wmJoin(){
   const st = $('#wmJoinStatus');
-  const input = ($('#wmJoinInput').value || '').trim().toUpperCase();
-  if(!input){ st.textContent = 'Enter the code or paste the link.'; st.className = 'wm-status err'; return; }
+  const raw = ($('#wmJoinInput').value || '').trim();
+  if(!raw){ st.textContent = 'Enter the room code or paste the link.'; st.className = 'wm-status err'; return; }
 
-  // Accept either a 6-char code OR a full URL pasted in
   let movieId = null;
 
-  if(input.includes('?WATCH=') || input.includes('?watch=')){
-    // Full link pasted
+  // 1) Full link (or "?watch=id") pasted
+  if(/watch=/i.test(raw)){
     try {
-      const url = new URL(input.toLowerCase().includes('http') ? input : 'https://x.com/' + input);
-      movieId = url.searchParams.get('watch');
+      const m = raw.match(/[?&]watch=([^&#\s]+)/i);
+      if(m) movieId = decodeURIComponent(m[1]);
     } catch(e){}
-  } else if(input.length === 6){
-    // Short code — look up from localStorage (works if same device) or try to decode
-    const stored = localStorage.getItem('vf-wt-code-' + input);
-    if(stored) movieId = stored;
+  }
+  // 2) Room code (ignore spaces/dashes, case-insensitive)
+  if(!movieId){
+    const code = raw.toUpperCase().replace(/[^A-Z0-9]/g,'');
+    if(code.length === 6) movieId = wmIdForCode(code);
   }
 
   if(!movieId){
-    st.textContent = 'Code not recognised — try pasting the full link instead.'; st.className = 'wm-status err'; return;
+    st.textContent = 'Code not recognised — check it and try again, or paste the full link.'; st.className = 'wm-status err'; return;
   }
 
   const item = CONTENT.find(x => x.id === movieId);
@@ -763,8 +800,6 @@ function wmAction(){
     const code = $('#wmActionBtn').dataset.code;
     const movieId = _wmCurrentMovieId;
     if(!link) return;
-    // Store code→movieId mapping in localStorage so code entry works on same device
-    if(code && movieId) localStorage.setItem('vf-wt-code-' + code, movieId);
     navigator.clipboard?.writeText(link).catch(()=>{
       // Fallback: show link in a prompt so user can copy manually
       prompt('Copy this link and send it to your friend:', link);
