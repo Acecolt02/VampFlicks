@@ -134,14 +134,6 @@ dialog::backdrop{background:#04020bf8}
 .vid-wrap::after{content:"";position:absolute;top:0;right:0;
   width:72px;height:56px;z-index:2;background:transparent;pointer-events:all}
 
-/* iOS fullscreen button */
-.fs-btn{position:absolute;bottom:.6rem;right:.6rem;z-index:3;
-  background:#00000099;border:1px solid #ffffff44;border-radius:8px;
-  color:#fff;font-size:1.1rem;width:40px;height:40px;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;
-  -webkit-tap-highlight-color:transparent;backdrop-filter:blur(4px)}
-.fs-btn:active{background:#000000cc}
-
 /* Scrollable info section on mobile */
 .player-bottom{padding:.75rem 1rem 1rem;overflow-y:auto;
   padding-bottom:calc(1rem + var(--sab))}
@@ -186,45 +178,60 @@ footer{padding:1.25rem;padding-bottom:calc(1.25rem + var(--sab));
 
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 
+/* FULLSCREEN BUTTON */
+.fs-btn{position:absolute;bottom:.55rem;right:.55rem;z-index:3;
+  background:#000000aa;border:1px solid #ffffff33;border-radius:8px;
+  color:#fff;width:42px;height:42px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-size:1.2rem;
+  -webkit-tap-highlight-color:transparent;backdrop-filter:blur(6px);
+  transition:background .15s}
+.fs-btn:active{background:#000000ee}
+
+/* When the player is in native fullscreen, fill the screen */
+.player:fullscreen{border-radius:0!important;max-height:100vh!important}
+.player:-webkit-full-screen{border-radius:0!important;max-height:100vh!important}
+.player:fullscreen .vid-wrap{padding-top:0;height:100vh}
+.player:-webkit-full-screen .vid-wrap{padding-top:0;height:100vh}
+
 /* WATCH TOGETHER */
-.watch-btn{display:inline-flex;align-items:center;gap:.45rem;cursor:pointer;background:transparent;
-  border:2px solid var(--cyan);color:#fff;border-radius:9px;
+.watch-btn{display:inline-flex;align-items:center;gap:.45rem;cursor:pointer;
+  background:transparent;border:2px solid var(--cyan);color:#fff;border-radius:9px;
   padding:.5rem 1.1rem;min-height:40px;margin-top:.35rem;
   font:600 .82rem var(--display);box-shadow:0 0 10px #22e8ff44,inset 0 0 10px #22e8ff22;
   transition:background .2s,box-shadow .2s;-webkit-tap-highlight-color:transparent}
 .watch-btn:hover,.watch-btn:active{background:#22e8ff20;box-shadow:0 0 20px #22e8ff88,inset 0 0 16px #22e8ff44}
 
 #watchModal{position:fixed;inset:0;z-index:20;display:none;place-items:center;
-  background:#04020bf8;padding:1.5rem}
+  background:#04020bf8;padding:1.5rem;padding-top:calc(1.5rem + env(safe-area-inset-top,0px))}
 #watchModal.open{display:grid}
 .wm-box{background:var(--surface);border:1px solid var(--cyan);border-radius:16px;
   padding:1.75rem;width:min(100%,380px);display:grid;gap:1rem;text-align:center;
   box-shadow:0 0 40px #22e8ff22}
 .wm-box h2{font:700 1.1rem var(--display);color:var(--cyan);letter-spacing:.06em}
 .wm-box p{color:var(--dim);font-size:.9rem;line-height:1.5}
-.code-display{font:800 2rem/1 var(--display);letter-spacing:.18em;color:#fff;
+.code-display{font:800 2.2rem/1 var(--display);letter-spacing:.2em;color:#fff;
   background:#0d0820;border:1px solid var(--line);border-radius:10px;
-  padding:.75rem 1rem;text-align:center;text-shadow:0 0 10px var(--cyan)}
+  padding:.8rem 1rem;text-shadow:0 0 12px var(--cyan)}
 .wm-status{font-size:.85rem;color:var(--dim);min-height:1.2em}
 .wm-status.waiting{color:var(--cyan);animation:pulse 1.4s ease-in-out infinite}
-.wm-status.joined{color:#4dff9a}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.wm-status.good{color:#4dff9a}
+.wm-status.err{color:var(--magenta)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
 .wm-input{background:#1a0b33;border:1px solid var(--line);border-radius:9px;
-  padding:.55rem 1rem;width:100%;font:700 1.4rem var(--display);
-  letter-spacing:.15em;text-align:center;text-transform:uppercase;
-  color:#fff;-webkit-appearance:none;min-height:48px;transition:border-color .2s}
+  padding:.55rem 1rem;width:100%;font:700 1.6rem var(--display);
+  letter-spacing:.18em;text-align:center;text-transform:uppercase;
+  color:#fff;-webkit-appearance:none;min-height:52px;transition:border-color .2s}
 .wm-input:focus{outline:none;border-color:var(--cyan)}
 .wm-row{display:flex;gap:.6rem;flex-wrap:wrap;justify-content:center}
 .wm-btn{flex:1;min-width:120px;cursor:pointer;background:transparent;
   border:2px solid var(--magenta);color:#fff;border-radius:9px;
-  padding:.6rem 1rem;min-height:44px;
-  font:600 .85rem var(--display);
+  padding:.6rem 1rem;min-height:44px;font:600 .85rem var(--display);
   box-shadow:0 0 10px #ff2e9744;transition:background .2s;
   -webkit-tap-highlight-color:transparent}
 .wm-btn:hover,.wm-btn:active{background:#ff2e9720}
-.wm-btn.secondary{border-color:var(--line);box-shadow:none}
-.wm-btn.secondary:hover{border-color:var(--dim)}
-.wm-tabs{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;margin-bottom:.25rem}
+.wm-btn.sec{border-color:var(--line);box-shadow:none}
+.wm-btn.sec:hover{border-color:var(--dim)}
+.wm-tabs{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
 .wm-tab{flex:1;padding:.55rem;font:600 .82rem var(--display);cursor:pointer;
   background:transparent;border:none;color:var(--dim);transition:background .15s,color .15s;
   -webkit-tap-highlight-color:transparent}
@@ -264,8 +271,9 @@ footer{padding:1.25rem;padding-bottom:calc(1.25rem + var(--sab));
 
 <dialog id="playerDialog" aria-label="Video player">
   <div class="player">
-    <div class="vid-wrap" id="vidWrap"></div>
-  <button class="fs-btn" id="fsBtn" title="Full screen" aria-label="Full screen">⛶</button>
+    <div class="vid-wrap" id="vidWrap">
+      <button class="fs-btn" id="fsBtn" title="Full screen" aria-label="Full screen">⛶</button>
+    </div>
     <div class="player-bottom">
       <div class="ep-row" id="epRow" hidden></div>
       <div class="player-meta">
@@ -273,7 +281,7 @@ footer{padding:1.25rem;padding-bottom:calc(1.25rem + var(--sab));
           <h3 id="pTitle"></h3>
           <p id="pDesc"></p>
           <p class="tip">Video not loading? The file may still be processing — wait a minute and try again.</p>
-          <button class="watch-btn" id="watchTogetherBtn" onclick="wmOpen()">👥 Watch Together</button>
+          <button class="watch-btn" id="watchTogetherBtn">👥 Watch Together</button>
         </div>
         <button class="close-btn" id="closeBtn">✕ Close</button>
       </div>
@@ -289,24 +297,20 @@ footer{padding:1.25rem;padding-bottom:calc(1.25rem + var(--sab));
       <button class="wm-tab active" id="tabHost" onclick="wmTab('host')">Start a Room</button>
       <button class="wm-tab" id="tabJoin" onclick="wmTab('join')">Join a Room</button>
     </div>
-
-    <!-- HOST PANEL -->
     <div id="panelHost">
-      <p>Share this code with your friend — when they join, the movie starts for both of you.</p>
+      <p>Share this code with your friend — when they enter it, the movie opens for both of you.</p>
       <div class="code-display" id="wmCode">——</div>
-      <div class="wm-status waiting" id="wmStatus">Waiting for friend to join…</div>
+      <div class="wm-status waiting" id="wmHostStatus">Waiting for friend to join…</div>
     </div>
-
-    <!-- JOIN PANEL -->
     <div id="panelJoin" hidden>
-      <p>Enter the code your friend gave you.</p>
-      <input class="wm-input" id="wmJoinInput" maxlength="6" placeholder="XXXXXX" autocomplete="off" spellcheck="false">
+      <p>Enter the code your friend sent you.</p>
+      <input class="wm-input" id="wmJoinInput" maxlength="6" placeholder="XXXXXX"
+             autocomplete="off" spellcheck="false" inputmode="text">
       <div class="wm-status" id="wmJoinStatus"></div>
     </div>
-
     <div class="wm-row">
-      <button class="wm-btn" id="wmActionBtn" onclick="wmAction()">Join</button>
-      <button class="wm-btn secondary" onclick="wmClose()">Cancel</button>
+      <button class="wm-btn" id="wmActionBtn">Copy Code</button>
+      <button class="wm-btn sec" onclick="wmClose()">Cancel</button>
     </div>
   </div>
 </div>
@@ -637,154 +641,146 @@ if(PASSCODE){
 } else { start(); }
 
 /* ══════════════════════════════════════════════════════
-   FULLSCREEN BUTTON (iOS fix)
+   FULLSCREEN  — requests fullscreen on the .player div
+   itself so iOS can actually honour it without touching
+   the sandboxed iframe at all.
    ══════════════════════════════════════════════════════ */
 $('#fsBtn').addEventListener('click', () => {
-  const iframe = vidWrap.querySelector('iframe');
-  if(!iframe) return;
-  // Try standard fullscreen first
-  const req = iframe.requestFullscreen || iframe.webkitRequestFullscreen || iframe.mozRequestFullScreen;
+  const player = document.querySelector('.player');
+  const req = player.requestFullscreen
+            || player.webkitRequestFullscreen
+            || player.mozRequestFullScreen
+            || player.msRequestFullscreen;
   if(req){
-    req.call(iframe).catch(()=>{});
-    return;
+    req.call(player).catch(()=>{});
   }
-  // iOS Safari fallback: tap the native video element inside the iframe if accessible
-  try {
-    const vid = iframe.contentDocument && iframe.contentDocument.querySelector('video');
-    if(vid){
-      const vReq = vid.requestFullscreen || vid.webkitEnterFullscreen || vid.webkitRequestFullscreen;
-      if(vReq) vReq.call(vid);
-    }
-  } catch(e){}
 });
 
 /* ══════════════════════════════════════════════════════
-   WATCH TOGETHER  (localStorage polling — no server needed)
-   Rooms expire after 10 minutes of inactivity.
+   WATCH TOGETHER  — real-time cross-device via GunJS
+   GunJS is a p2p decentralised database loaded from CDN.
+   No account, no API key, works on any device/network.
    ══════════════════════════════════════════════════════ */
-const WM_NS   = 'vf-wt-';   // localStorage key prefix
-const WM_TTL  = 10 * 60 * 1000; // 10 min
-let wmRoom    = null;  // { code, role:'host'|'guest', movieId }
-let wmTimer   = null;
+
+// Load GunJS from CDN
+(function(){
+  const s = document.createElement('script');
+  s.src = 'https://cdn.jsdelivr.net/npm/gun/gun.js';
+  s.onload = wmInitGun;
+  document.head.appendChild(s);
+})();
+
+let _gun = null;
+let _wmCurrentMovieId = null;
+let _wmMode = 'host';
+let _wmMyCode = null;
+let _wmRoomRef = null;
+let _wmListener = null;
+
+// Track currently open movie
+const _origOpen = openContent;
+function openContent(id){
+  _wmCurrentMovieId = id;
+  _origOpen(id);
+}
+
+function wmInitGun(){
+  // Use public Gun relay peers
+  _gun = Gun(['https://gun-manhattan.herokuapp.com/gun',
+              'https://gunjs.herokuapp.com/gun']);
+}
 
 function wmRandCode(){
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let c='';
-  for(let i=0;i<6;i++) c+=chars[Math.floor(Math.random()*chars.length)];
+  const ch='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let c='';for(let i=0;i<6;i++)c+=ch[Math.floor(Math.random()*ch.length)];
   return c;
 }
 
-function wmWrite(code, data){
-  try{ localStorage.setItem(WM_NS+code, JSON.stringify({...data, ts:Date.now()})); }catch(e){}
-}
-
-function wmRead(code){
-  try{
-    const raw = localStorage.getItem(WM_NS+code);
-    if(!raw) return null;
-    const d = JSON.parse(raw);
-    if(Date.now()-d.ts > WM_TTL){ localStorage.removeItem(WM_NS+code); return null; }
-    return d;
-  }catch(e){ return null; }
-}
-
+/* ── UI tabs ──────────────────────────────────────── */
 function wmTab(tab){
+  _wmMode = tab;
   $('#tabHost').classList.toggle('active', tab==='host');
   $('#tabJoin').classList.toggle('active', tab==='join');
   $('#panelHost').hidden = tab!=='host';
   $('#panelJoin').hidden = tab!=='join';
-  $('#wmActionBtn').textContent = tab==='host' ? 'Copy Code' : 'Join';
+  $('#wmActionBtn').textContent = tab==='host' ? 'Copy Code' : 'Join Room';
   if(tab==='host') wmStartHost();
 }
 
 function wmStartHost(){
-  if(wmTimer) clearInterval(wmTimer);
-  const currentMovie = document.querySelector('[data-id]') && wmRoom?.movieId;
-  // grab current open movie id from player title element (simplest approach)
-  const movieId = wmRoom?.movieId || null;
-  const code = wmRandCode();
-  wmRoom = { code, role:'host', movieId: _currentOpenId };
-  wmWrite(code, { state:'waiting', movieId: _currentOpenId });
-  $('#wmCode').textContent = code;
-  $('#wmStatus').textContent = 'Waiting for friend to join…';
-  $('#wmStatus').className = 'wm-status waiting';
+  if(!_gun){ $('#wmHostStatus').textContent='Still connecting — try again in a moment.'; return; }
+  if(_wmRoomRef && _wmListener){ _wmRoomRef.off(); }
 
-  // Poll for guest joining
-  wmTimer = setInterval(()=>{
-    const d = wmRead(code);
-    if(!d){ clearInterval(wmTimer); return; }
-    wmWrite(code, {...d}); // refresh TTL
-    if(d.state==='joined'){
-      clearInterval(wmTimer);
-      $('#wmStatus').textContent = '🎉 Friend joined! Starting…';
-      $('#wmStatus').className = 'wm-status joined';
-      setTimeout(()=>{ wmClose(); }, 1200);
+  _wmMyCode = wmRandCode();
+  $('#wmCode').textContent = _wmMyCode;
+  $('#wmHostStatus').textContent = 'Waiting for friend to join…';
+  $('#wmHostStatus').className = 'wm-status waiting';
+
+  // Write room to Gun
+  _wmRoomRef = _gun.get('vampflickz-rooms').get(_wmMyCode);
+  _wmRoomRef.put({ state:'waiting', movieId: _wmCurrentMovieId||'', ts: Date.now() });
+
+  // Listen for guest joining
+  _wmRoomRef.on(function(data){
+    if(data && data.state==='joined'){
+      this.off();
+      $('#wmHostStatus').textContent = '🎉 Friend joined! Enjoy the movie!';
+      $('#wmHostStatus').className = 'wm-status good';
+      setTimeout(wmClose, 1800);
     }
-  }, 2000);
+  });
+}
+
+async function wmJoin(){
+  const st = $('#wmJoinStatus');
+  const code = ($('#wmJoinInput').value||'').trim().toUpperCase();
+  if(code.length!==6){ st.textContent='Enter a 6-character code.'; st.className='wm-status err'; return; }
+  if(!_gun){ st.textContent='Still connecting — try again in a moment.'; st.className='wm-status err'; return; }
+
+  st.textContent='Looking up room…'; st.className='wm-status waiting';
+
+  _gun.get('vampflickz-rooms').get(code).once(function(data){
+    if(!data || !data.movieId){
+      st.textContent='Room not found — double-check the code.'; st.className='wm-status err'; return;
+    }
+    if(data.state==='joined'){
+      st.textContent='This room already has a guest.'; st.className='wm-status err'; return;
+    }
+    // Mark joined
+    _gun.get('vampflickz-rooms').get(code).put({ state:'joined', ts: Date.now() });
+    st.textContent='✓ Joined! Opening movie…'; st.className='wm-status good';
+    const movieId = data.movieId;
+    setTimeout(()=>{ wmClose(); if(movieId) openContent(movieId); }, 900);
+  });
 }
 
 function wmAction(){
-  const isHost = $('#tabHost').classList.contains('active');
-  if(isHost){
-    // Copy code to clipboard
+  if(_wmMode==='host'){
     const code = $('#wmCode').textContent;
     if(code && code!=='——'){
       navigator.clipboard?.writeText(code).catch(()=>{});
-      $('#wmActionBtn').textContent = '✓ Copied!';
-      setTimeout(()=>{ $('#wmActionBtn').textContent = 'Copy Code'; }, 2000);
+      const btn=$('#wmActionBtn'); btn.textContent='✓ Copied!';
+      setTimeout(()=>{ btn.textContent='Copy Code'; }, 2000);
     }
-  } else {
-    // Guest joins
-    const code = $('#wmJoinInput').value.trim().toUpperCase();
-    if(code.length!==6){ $('#wmJoinStatus').textContent='Enter a 6-character code.'; return; }
-    const d = wmRead(code);
-    if(!d){ $('#wmJoinStatus').textContent='Room not found — check the code and try again.'; return; }
-    if(d.state!=='waiting'){ $('#wmJoinStatus').textContent='This room already started.'; return; }
-
-    // Mark as joined
-    wmWrite(code, {...d, state:'joined'});
-    wmRoom = { code, role:'guest', movieId: d.movieId };
-    $('#wmJoinStatus').textContent = '✓ Joined! Opening movie…';
-    $('#wmJoinStatus').className = 'wm-status joined';
-
-    setTimeout(()=>{
-      wmClose();
-      if(d.movieId) openContent(d.movieId);
-    }, 900);
-  }
+  } else { wmJoin(); }
 }
 
 function wmOpen(){
-  // Store current open movie id so host can share it
-  _currentOpenId = _openContentId;
-  wmRoom = { ...(wmRoom||{}), movieId: _currentOpenId };
   wmTab('host');
   $('#watchModal').classList.add('open');
 }
-
 function wmClose(){
   $('#watchModal').classList.remove('open');
-  if(wmTimer){ clearInterval(wmTimer); wmTimer=null; }
+  if(_wmRoomRef) _wmRoomRef.off();
   $('#wmJoinInput').value='';
   $('#wmJoinStatus').textContent='';
+  $('#wmJoinStatus').className='wm-status';
 }
 
-// Close modal on backdrop click
+$('#watchTogetherBtn').addEventListener('click', wmOpen);
+$('#wmActionBtn').addEventListener('click', wmAction);
 $('#watchModal').addEventListener('click', e=>{ if(e.target===$('#watchModal')) wmClose(); });
-// Allow Escape key
 document.addEventListener('keydown', e=>{ if(e.key==='Escape' && $('#watchModal').classList.contains('open')) wmClose(); });
-
-// Track which movie is currently open
-let _openContentId = null;
-const _origOpenContent = openContent;
-// Wrap openContent to track current id
-window.openContent = function(id){
-  _openContentId = id;
-  _origOpenContent(id);
-};
-// re-wire event listeners that call openContent directly
-// (the click handler uses window.openContent so it'll pick up the wrapper automatically)
-let _currentOpenId = null;
 </script>
 </body>
 </html>
