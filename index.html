@@ -134,6 +134,14 @@ dialog::backdrop{background:#04020bf8}
 .vid-wrap::after{content:"";position:absolute;top:0;right:0;
   width:72px;height:56px;z-index:2;background:transparent;pointer-events:all}
 
+/* iOS fullscreen button */
+.fs-btn{position:absolute;bottom:.6rem;right:.6rem;z-index:3;
+  background:#00000099;border:1px solid #ffffff44;border-radius:8px;
+  color:#fff;font-size:1.1rem;width:40px;height:40px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  -webkit-tap-highlight-color:transparent;backdrop-filter:blur(4px)}
+.fs-btn:active{background:#000000cc}
+
 /* Scrollable info section on mobile */
 .player-bottom{padding:.75rem 1rem 1rem;overflow-y:auto;
   padding-bottom:calc(1rem + var(--sab))}
@@ -177,6 +185,50 @@ footer{padding:1.25rem;padding-bottom:calc(1.25rem + var(--sab));
   text-align:center;color:var(--dim);border-top:1px solid var(--line);font-size:.875rem}
 
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* WATCH TOGETHER */
+.watch-btn{display:inline-flex;align-items:center;gap:.45rem;cursor:pointer;background:transparent;
+  border:2px solid var(--cyan);color:#fff;border-radius:9px;
+  padding:.5rem 1.1rem;min-height:40px;margin-top:.35rem;
+  font:600 .82rem var(--display);box-shadow:0 0 10px #22e8ff44,inset 0 0 10px #22e8ff22;
+  transition:background .2s,box-shadow .2s;-webkit-tap-highlight-color:transparent}
+.watch-btn:hover,.watch-btn:active{background:#22e8ff20;box-shadow:0 0 20px #22e8ff88,inset 0 0 16px #22e8ff44}
+
+#watchModal{position:fixed;inset:0;z-index:20;display:none;place-items:center;
+  background:#04020bf8;padding:1.5rem}
+#watchModal.open{display:grid}
+.wm-box{background:var(--surface);border:1px solid var(--cyan);border-radius:16px;
+  padding:1.75rem;width:min(100%,380px);display:grid;gap:1rem;text-align:center;
+  box-shadow:0 0 40px #22e8ff22}
+.wm-box h2{font:700 1.1rem var(--display);color:var(--cyan);letter-spacing:.06em}
+.wm-box p{color:var(--dim);font-size:.9rem;line-height:1.5}
+.code-display{font:800 2rem/1 var(--display);letter-spacing:.18em;color:#fff;
+  background:#0d0820;border:1px solid var(--line);border-radius:10px;
+  padding:.75rem 1rem;text-align:center;text-shadow:0 0 10px var(--cyan)}
+.wm-status{font-size:.85rem;color:var(--dim);min-height:1.2em}
+.wm-status.waiting{color:var(--cyan);animation:pulse 1.4s ease-in-out infinite}
+.wm-status.joined{color:#4dff9a}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.wm-input{background:#1a0b33;border:1px solid var(--line);border-radius:9px;
+  padding:.55rem 1rem;width:100%;font:700 1.4rem var(--display);
+  letter-spacing:.15em;text-align:center;text-transform:uppercase;
+  color:#fff;-webkit-appearance:none;min-height:48px;transition:border-color .2s}
+.wm-input:focus{outline:none;border-color:var(--cyan)}
+.wm-row{display:flex;gap:.6rem;flex-wrap:wrap;justify-content:center}
+.wm-btn{flex:1;min-width:120px;cursor:pointer;background:transparent;
+  border:2px solid var(--magenta);color:#fff;border-radius:9px;
+  padding:.6rem 1rem;min-height:44px;
+  font:600 .85rem var(--display);
+  box-shadow:0 0 10px #ff2e9744;transition:background .2s;
+  -webkit-tap-highlight-color:transparent}
+.wm-btn:hover,.wm-btn:active{background:#ff2e9720}
+.wm-btn.secondary{border-color:var(--line);box-shadow:none}
+.wm-btn.secondary:hover{border-color:var(--dim)}
+.wm-tabs{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;margin-bottom:.25rem}
+.wm-tab{flex:1;padding:.55rem;font:600 .82rem var(--display);cursor:pointer;
+  background:transparent;border:none;color:var(--dim);transition:background .15s,color .15s;
+  -webkit-tap-highlight-color:transparent}
+.wm-tab.active{background:#22e8ff18;color:var(--cyan)}
 </style>
 </head>
 <body>
@@ -213,6 +265,7 @@ footer{padding:1.25rem;padding-bottom:calc(1.25rem + var(--sab));
 <dialog id="playerDialog" aria-label="Video player">
   <div class="player">
     <div class="vid-wrap" id="vidWrap"></div>
+  <button class="fs-btn" id="fsBtn" title="Full screen" aria-label="Full screen">⛶</button>
     <div class="player-bottom">
       <div class="ep-row" id="epRow" hidden></div>
       <div class="player-meta">
@@ -220,12 +273,43 @@ footer{padding:1.25rem;padding-bottom:calc(1.25rem + var(--sab));
           <h3 id="pTitle"></h3>
           <p id="pDesc"></p>
           <p class="tip">Video not loading? The file may still be processing — wait a minute and try again.</p>
+          <button class="watch-btn" id="watchTogetherBtn" onclick="wmOpen()">👥 Watch Together</button>
         </div>
         <button class="close-btn" id="closeBtn">✕ Close</button>
       </div>
     </div>
   </div>
 </dialog>
+
+<!-- WATCH TOGETHER MODAL -->
+<div id="watchModal" role="dialog" aria-label="Watch Together">
+  <div class="wm-box">
+    <h2>🎬 Watch Together</h2>
+    <div class="wm-tabs">
+      <button class="wm-tab active" id="tabHost" onclick="wmTab('host')">Start a Room</button>
+      <button class="wm-tab" id="tabJoin" onclick="wmTab('join')">Join a Room</button>
+    </div>
+
+    <!-- HOST PANEL -->
+    <div id="panelHost">
+      <p>Share this code with your friend — when they join, the movie starts for both of you.</p>
+      <div class="code-display" id="wmCode">——</div>
+      <div class="wm-status waiting" id="wmStatus">Waiting for friend to join…</div>
+    </div>
+
+    <!-- JOIN PANEL -->
+    <div id="panelJoin" hidden>
+      <p>Enter the code your friend gave you.</p>
+      <input class="wm-input" id="wmJoinInput" maxlength="6" placeholder="XXXXXX" autocomplete="off" spellcheck="false">
+      <div class="wm-status" id="wmJoinStatus"></div>
+    </div>
+
+    <div class="wm-row">
+      <button class="wm-btn" id="wmActionBtn" onclick="wmAction()">Join</button>
+      <button class="wm-btn secondary" onclick="wmClose()">Cancel</button>
+    </div>
+  </div>
+</div>
 
 <script>
 /* ══════════════════════════════════════════════════════
@@ -263,8 +347,15 @@ const CONTENT = [
     id: 'spiderman-bnd', type: 'movie',
     title: 'Spider-Man: Brand New Day', year: 2026,
     desc: 'Peter Parker erases himself from everyone\'s memory and operates as a full-time Spider-Man in a New York City that no longer knows his name.',
-    drive: 'https://drive.google.com/file/d/1qPfL0R5ip15Hccsbb-pD5aT0bBM8Cvtz/view?usp=sharing',
+    drive: 'https://drive.google.com/file/d/1-a4jjea28xFyOFfiBeCki4-DwwPa8o8t/view?usp=drive_link',
     poster: 'https://www.superherohype.com/wp-content/uploads/sites/4/2026/07/Spider-Man-Brand-New-Day-Official-Poster.jpg'
+  },
+  {
+    id: 'full-metal-jacket', type: 'movie',
+    title: 'Full Metal Jacket', year: 1987,
+    desc: 'Stanley Kubrick\'s unflinching Vietnam War film follows a squad of recruits through brutal Marine boot camp and into the chaos of the Tet Offensive.',
+    drive: 'https://drive.google.com/file/d/1BhSz1gl4t9RLVGiccnE0Tl1bNPOognj1/view?usp=drive_link',
+    poster: 'https://image.tmdb.org/t/p/w500/xLP4WFvFzHPVFJbzpg6e3QkFMpn.jpg'
   },
   {
     id: 'the-batman-2022', type: 'movie',
@@ -544,6 +635,156 @@ if(PASSCODE){
     });
   }
 } else { start(); }
+
+/* ══════════════════════════════════════════════════════
+   FULLSCREEN BUTTON (iOS fix)
+   ══════════════════════════════════════════════════════ */
+$('#fsBtn').addEventListener('click', () => {
+  const iframe = vidWrap.querySelector('iframe');
+  if(!iframe) return;
+  // Try standard fullscreen first
+  const req = iframe.requestFullscreen || iframe.webkitRequestFullscreen || iframe.mozRequestFullScreen;
+  if(req){
+    req.call(iframe).catch(()=>{});
+    return;
+  }
+  // iOS Safari fallback: tap the native video element inside the iframe if accessible
+  try {
+    const vid = iframe.contentDocument && iframe.contentDocument.querySelector('video');
+    if(vid){
+      const vReq = vid.requestFullscreen || vid.webkitEnterFullscreen || vid.webkitRequestFullscreen;
+      if(vReq) vReq.call(vid);
+    }
+  } catch(e){}
+});
+
+/* ══════════════════════════════════════════════════════
+   WATCH TOGETHER  (localStorage polling — no server needed)
+   Rooms expire after 10 minutes of inactivity.
+   ══════════════════════════════════════════════════════ */
+const WM_NS   = 'vf-wt-';   // localStorage key prefix
+const WM_TTL  = 10 * 60 * 1000; // 10 min
+let wmRoom    = null;  // { code, role:'host'|'guest', movieId }
+let wmTimer   = null;
+
+function wmRandCode(){
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let c='';
+  for(let i=0;i<6;i++) c+=chars[Math.floor(Math.random()*chars.length)];
+  return c;
+}
+
+function wmWrite(code, data){
+  try{ localStorage.setItem(WM_NS+code, JSON.stringify({...data, ts:Date.now()})); }catch(e){}
+}
+
+function wmRead(code){
+  try{
+    const raw = localStorage.getItem(WM_NS+code);
+    if(!raw) return null;
+    const d = JSON.parse(raw);
+    if(Date.now()-d.ts > WM_TTL){ localStorage.removeItem(WM_NS+code); return null; }
+    return d;
+  }catch(e){ return null; }
+}
+
+function wmTab(tab){
+  $('#tabHost').classList.toggle('active', tab==='host');
+  $('#tabJoin').classList.toggle('active', tab==='join');
+  $('#panelHost').hidden = tab!=='host';
+  $('#panelJoin').hidden = tab!=='join';
+  $('#wmActionBtn').textContent = tab==='host' ? 'Copy Code' : 'Join';
+  if(tab==='host') wmStartHost();
+}
+
+function wmStartHost(){
+  if(wmTimer) clearInterval(wmTimer);
+  const currentMovie = document.querySelector('[data-id]') && wmRoom?.movieId;
+  // grab current open movie id from player title element (simplest approach)
+  const movieId = wmRoom?.movieId || null;
+  const code = wmRandCode();
+  wmRoom = { code, role:'host', movieId: _currentOpenId };
+  wmWrite(code, { state:'waiting', movieId: _currentOpenId });
+  $('#wmCode').textContent = code;
+  $('#wmStatus').textContent = 'Waiting for friend to join…';
+  $('#wmStatus').className = 'wm-status waiting';
+
+  // Poll for guest joining
+  wmTimer = setInterval(()=>{
+    const d = wmRead(code);
+    if(!d){ clearInterval(wmTimer); return; }
+    wmWrite(code, {...d}); // refresh TTL
+    if(d.state==='joined'){
+      clearInterval(wmTimer);
+      $('#wmStatus').textContent = '🎉 Friend joined! Starting…';
+      $('#wmStatus').className = 'wm-status joined';
+      setTimeout(()=>{ wmClose(); }, 1200);
+    }
+  }, 2000);
+}
+
+function wmAction(){
+  const isHost = $('#tabHost').classList.contains('active');
+  if(isHost){
+    // Copy code to clipboard
+    const code = $('#wmCode').textContent;
+    if(code && code!=='——'){
+      navigator.clipboard?.writeText(code).catch(()=>{});
+      $('#wmActionBtn').textContent = '✓ Copied!';
+      setTimeout(()=>{ $('#wmActionBtn').textContent = 'Copy Code'; }, 2000);
+    }
+  } else {
+    // Guest joins
+    const code = $('#wmJoinInput').value.trim().toUpperCase();
+    if(code.length!==6){ $('#wmJoinStatus').textContent='Enter a 6-character code.'; return; }
+    const d = wmRead(code);
+    if(!d){ $('#wmJoinStatus').textContent='Room not found — check the code and try again.'; return; }
+    if(d.state!=='waiting'){ $('#wmJoinStatus').textContent='This room already started.'; return; }
+
+    // Mark as joined
+    wmWrite(code, {...d, state:'joined'});
+    wmRoom = { code, role:'guest', movieId: d.movieId };
+    $('#wmJoinStatus').textContent = '✓ Joined! Opening movie…';
+    $('#wmJoinStatus').className = 'wm-status joined';
+
+    setTimeout(()=>{
+      wmClose();
+      if(d.movieId) openContent(d.movieId);
+    }, 900);
+  }
+}
+
+function wmOpen(){
+  // Store current open movie id so host can share it
+  _currentOpenId = _openContentId;
+  wmRoom = { ...(wmRoom||{}), movieId: _currentOpenId };
+  wmTab('host');
+  $('#watchModal').classList.add('open');
+}
+
+function wmClose(){
+  $('#watchModal').classList.remove('open');
+  if(wmTimer){ clearInterval(wmTimer); wmTimer=null; }
+  $('#wmJoinInput').value='';
+  $('#wmJoinStatus').textContent='';
+}
+
+// Close modal on backdrop click
+$('#watchModal').addEventListener('click', e=>{ if(e.target===$('#watchModal')) wmClose(); });
+// Allow Escape key
+document.addEventListener('keydown', e=>{ if(e.key==='Escape' && $('#watchModal').classList.contains('open')) wmClose(); });
+
+// Track which movie is currently open
+let _openContentId = null;
+const _origOpenContent = openContent;
+// Wrap openContent to track current id
+window.openContent = function(id){
+  _openContentId = id;
+  _origOpenContent(id);
+};
+// re-wire event listeners that call openContent directly
+// (the click handler uses window.openContent so it'll pick up the wrapper automatically)
+let _currentOpenId = null;
 </script>
 </body>
 </html>
