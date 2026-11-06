@@ -359,7 +359,7 @@ const CONTENT = [
     title: 'Full Metal Jacket', year: 1987,
     desc: 'Stanley Kubrick\'s unflinching Vietnam War film follows a squad of recruits through brutal Marine boot camp and into the chaos of the Tet Offensive.',
     drive: 'https://drive.google.com/file/d/1BhSz1gl4t9RLVGiccnE0Tl1bNPOognj1/view?usp=drive_link',
-    poster: 'https://image.tmdb.org/t/p/w500/xLP4WFvFzHPVFJbzpg6e3QkFMpn.jpg'
+    poster: 'https://www.cinemaclock.com/images/posters/1000x1500/50/full-metal-jacket-1987-us-poster.jpg'
   },
   {
     id: 'the-batman-2022', type: 'movie',
@@ -379,7 +379,7 @@ const CONTENT = [
     id: 'the-good-place', type: 'tv',
     title: 'The Good Place', year: '2016–2020',
     desc: 'Eleanor Shellstrop accidentally ends up in the afterlife\'s Good Place. An NBC comedy about ethics, philosophy, and what it means to be a good person.',
-    poster: 'https://image.tmdb.org/t/p/w500/xFoKWGEPYDsXk9MBLnEgLwqEp4V.jpg',
+    poster: 'https://www.cinemaclock.com/images/posters/1000x1500/45/-x22-the-good-place-x22-2016-i-movie-poster.jpg',
     seasons: [
       {
         label: 'Season 1',
@@ -603,7 +603,7 @@ function closePlayer(){
    ══════════════════════════════════════════════════════ */
 document.addEventListener('click', e => {
   const t = e.target.closest('[data-id]');
-  if(t) openContent(t.dataset.id);
+  if(t){ _wmCurrentMovieId = t.dataset.id; openContent(t.dataset.id); }
 });
 $('#closeBtn').addEventListener('click', closePlayer);
 $('#playerDialog').addEventListener('cancel', e => { e.preventDefault(); closePlayer(); });
@@ -677,12 +677,8 @@ let _wmMyCode = null;
 let _wmRoomRef = null;
 let _wmListener = null;
 
-// Track currently open movie
-const _origOpen = openContent;
-function openContent(id){
-  _wmCurrentMovieId = id;
-  _origOpen(id);
-}
+// Track currently open movie for Watch Together
+const _origOpenContent = openContent;
 
 function wmInitGun(){
   // Use public Gun relay peers
@@ -750,7 +746,7 @@ async function wmJoin(){
     _gun.get('vampflickz-rooms').get(code).put({ state:'joined', ts: Date.now() });
     st.textContent='✓ Joined! Opening movie…'; st.className='wm-status good';
     const movieId = data.movieId;
-    setTimeout(()=>{ wmClose(); if(movieId) openContent(movieId); }, 900);
+    setTimeout(()=>{ wmClose(); if(movieId) _origOpenContent(movieId); }, 900);
   });
 }
 
