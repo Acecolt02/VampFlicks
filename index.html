@@ -201,9 +201,16 @@ footer{padding:1.25rem;padding-bottom:calc(1.25rem + var(--sab));
   transition:background .2s,box-shadow .2s;-webkit-tap-highlight-color:transparent}
 .watch-btn:hover,.watch-btn:active{background:#22e8ff20;box-shadow:0 0 20px #22e8ff88,inset 0 0 16px #22e8ff44}
 
-#watchModal{position:fixed;inset:0;z-index:20;display:none;place-items:center;
-  background:#04020bf8;padding:1.5rem;padding-top:calc(1.5rem + env(safe-area-inset-top,0px))}
-#watchModal.open{display:grid}
+#watchModal{position:fixed;inset:0;width:100%;max-width:none;height:100%;max-height:none;
+  margin:0;border:none;border-radius:0;color:var(--text);overflow:auto;
+  display:none;place-items:center;background:#04020bf8;
+  padding:1.5rem;padding-top:calc(1.5rem + env(safe-area-inset-top,0px))}
+#watchModal[open]{display:grid}
+#watchModal::backdrop{background:transparent}
+.hdr-right{display:flex;gap:.6rem;align-items:center;flex:1 1 280px;justify-content:flex-end}
+.hdr-right .search{flex:1 1 auto;min-width:0;max-width:280px}
+.hdr-right .watch-btn{margin-top:0;white-space:nowrap;flex:none}
+@media(max-width:480px){.hdr-right .search{max-width:none}}
 .wm-box{background:var(--surface);border:1px solid var(--cyan);border-radius:16px;
   padding:1.75rem;width:min(100%,380px);display:grid;gap:1rem;text-align:center;
   box-shadow:0 0 40px #22e8ff22}
@@ -252,7 +259,10 @@ footer{padding:1.25rem;padding-bottom:calc(1.25rem + var(--sab));
 
 <header>
   <div class="logo" onclick="closePlayer()">Vamp<span>Flickz</span></div>
-  <input class="search" id="searchBox" type="search" placeholder="Search…" aria-label="Search">
+  <div class="hdr-right">
+    <button class="watch-btn" id="joinRoomBtn">👥 Join Room</button>
+    <input class="search" id="searchBox" type="search" placeholder="Search…" aria-label="Search">
+  </div>
 </header>
 
 <main>
@@ -290,7 +300,7 @@ footer{padding:1.25rem;padding-bottom:calc(1.25rem + var(--sab));
 </dialog>
 
 <!-- WATCH TOGETHER MODAL -->
-<div id="watchModal" role="dialog" aria-label="Watch Together">
+<dialog id="watchModal" aria-label="Watch Together">
   <div class="wm-box">
     <h2>🎬 Watch Together</h2>
     <div class="wm-tabs">
@@ -314,7 +324,7 @@ footer{padding:1.25rem;padding-bottom:calc(1.25rem + var(--sab));
       <button class="wm-btn sec" onclick="wmClose()">Cancel</button>
     </div>
   </div>
-</div>
+</dialog>
 
 <script>
 /* ══════════════════════════════════════════════════════
@@ -393,9 +403,9 @@ const CONTENT = [
           { label: 'S1E6 – What We Owe to Each Other',  drive: 'https://drive.google.com/file/d/1GEhrZcSzWba79eGJ2kz6fqiwMUodl7nF/view?usp=drive_link' },
           { label: 'S1E7 – The Eternal Shriek',         drive: 'https://drive.google.com/file/d/1Xl0KIgmssanONXgbyYyGe2-CTMBBHqdX/view?usp=drive_link' },
           { label: 'S1E8 – Most Improved Player',       drive: 'https://drive.google.com/file/d/1zCpDGZ14zLO7VqQBYaCLNoAraKupK9cf/view?usp=drive_link' },
-          { label: 'S1E9 – ...Someone Like Me as a Member', drive: 'https://drive.google.com/file/d/1eJ_zSOvTyh3DEwX9SNZCWABbuAPnxf_i/view?usp=drive_link' },
+          { label: 'S1E9 – ...Someone Like Me as a Member', drive: 'https://drive.google.com/file/d/1DSeowlxzhrDKWW8_agOjAHI_xwte8GNF/view?usp=drive_link' },
           { label: 'S1E10 – Chidi\'s Choice',           drive: 'https://drive.google.com/file/d/1eJ_zSOvTyh3DEwX9SNZCWABbuAPnxf_i/view?usp=drive_link' },
-          { label: 'S1E11 – What\'s My Motivation',     drive: 'https://drive.google.com/file/d/1eJ_zSOvTyh3DEwX9SNZCWABbuAPnxf_i/view?usp=drive_link' },
+          { label: 'S1E11 – What\'s My Motivation',     drive: 'https://drive.google.com/file/d/1kKc9OKetsACj4RYgy7SFpTed_OAxhs2e/view?usp=drive_link' },
           { label: 'S1E12 – Mindy St. Claire',          drive: 'https://drive.google.com/file/d/1kKc9OKetsACj4RYgy7SFpTed_OAxhs2e/view?usp=drive_link' },
           { label: 'S1E13 – Michael\'s Gambit',         drive: 'https://drive.google.com/file/d/1cKrU5nbI-ToSaDDK9AqP7hycPESy1oK0/view?usp=drive_link' }
         ]
@@ -461,6 +471,9 @@ const CONTENT = [
    ══════════════════════════════════════════════════════ */
 const $ = s => document.querySelector(s);
 const dlg = $('#playerDialog'), vidWrap = $('#vidWrap');
+const fsBtnEl = $('#fsBtn');
+// Swap the video area's contents but keep the fullscreen button alive
+function setVid(html){ vidWrap.innerHTML = html; vidWrap.appendChild(fsBtnEl); }
 
 function esc(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function hue(s){ let h=0; for(const c of s) h=(h*31+c.charCodeAt(0))%360; return h; }
@@ -517,9 +530,7 @@ function renderHero(){
    ══════════════════════════════════════════════════════ */
 function embedFrame(fileId, title=''){
   return `<iframe src="https://drive.google.com/file/d/${encodeURIComponent(fileId)}/preview"
-    allow="autoplay;fullscreen" allowfullscreen title="${esc(title)}"
-    sandbox="allow-scripts allow-same-origin allow-forms"
-    referrerpolicy="no-referrer"></iframe>`;
+    allow="autoplay;fullscreen" allowfullscreen title="${esc(title)}"></iframe>`;
 }
 
 function noFileMsg(msg='This video isn\'t available yet — check back soon.'){
@@ -529,6 +540,7 @@ function noFileMsg(msg='This video isn\'t available yet — check back soon.'){
 async function openContent(id){
   const item = CONTENT.find(x=>x.id===id);
   if(!item) return;
+  _wmCurrentMovieId = id;
   $('#pTitle').textContent = item.title;
   $('#pDesc').textContent  = item.desc;
 
@@ -539,12 +551,12 @@ async function openContent(id){
   if(item.type==='movie'){
     // Direct file link wins; otherwise open Drive folder
     const fid = driveId(item.drive);
-    vidWrap.innerHTML = fid ? embedFrame(fid, item.title) : noFileMsg();
+    setVid(fid ? embedFrame(fid, item.title) : noFileMsg());
 
   } else {
     // TV show — season + episode picker
     const seasons = item.seasons || [];
-    if(!seasons.length){ vidWrap.innerHTML = noFileMsg('No seasons configured.'); }
+    if(!seasons.length){ setVid(noFileMsg('No seasons configured.')); }
     else {
       epRow.hidden = false;
 
@@ -567,9 +579,9 @@ async function openContent(id){
       function loadEpisode(){
         const eps = seasons[+seasonSel.value].episodes || [];
         const ep  = eps[+epSel.value];
-        if(!ep){ vidWrap.innerHTML = noFileMsg('No episode link yet.'); return; }
+        if(!ep){ setVid(noFileMsg('No episode link yet.')); return; }
         const fid = driveId(ep.drive);
-        vidWrap.innerHTML = fid ? embedFrame(fid, ep.label) : noFileMsg('Episode link not added yet.');
+        setVid(fid ? embedFrame(fid, ep.label) : noFileMsg('Episode link not added yet.'));
       }
 
       function populateEpisodes(){
@@ -594,7 +606,7 @@ async function openContent(id){
 }
 
 function closePlayer(){
-  vidWrap.innerHTML = '';
+  setVid('');
   if(dlg.open) dlg.close();
   history.replaceState(null,'',location.pathname+location.search);
 }
@@ -646,7 +658,7 @@ if(PASSCODE){
    itself so iOS can actually honour it without touching
    the sandboxed iframe at all.
    ══════════════════════════════════════════════════════ */
-$('#fsBtn').addEventListener('click', () => {
+fsBtnEl.addEventListener('click', () => {
   const player = document.querySelector('.player');
   const req = player.requestFullscreen
             || player.webkitRequestFullscreen
@@ -666,8 +678,8 @@ $('#fsBtn').addEventListener('click', () => {
    so it's easy to type on mobile too.
    ══════════════════════════════════════════════════════ */
 
-let _wmCurrentMovieId = null;
-let _wmMode = 'host';
+var _wmCurrentMovieId;   // var, not let: start() may call openContent() before this line runs
+var _wmMode = 'host';
 
 // Track which movie is currently open
 document.addEventListener('click', e => {
@@ -796,37 +808,43 @@ function wmJoin(){
 
 function wmAction(){
   if(_wmMode === 'host'){
-    const link = $('#wmActionBtn').dataset.link;
-    const code = $('#wmActionBtn').dataset.code;
-    const movieId = _wmCurrentMovieId;
+    const btn  = $('#wmActionBtn');
+    const link = btn.dataset.link;
     if(!link) return;
-    navigator.clipboard?.writeText(link).catch(()=>{
-      // Fallback: show link in a prompt so user can copy manually
-      prompt('Copy this link and send it to your friend:', link);
-    });
-    const btn = $('#wmActionBtn');
-    btn.textContent = '✓ Link Copied!';
-    setTimeout(() => { btn.textContent = 'Copy Link'; }, 2500);
+    const ok = () => { btn.textContent = '✓ Link Copied!'; setTimeout(() => { btn.textContent = 'Copy Link'; }, 2500); };
+    const manual = () => prompt('Copy this link and send it to your friend:', link);
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(link).then(ok, manual);
+    } else { manual(); }
   } else {
     wmJoin();
   }
 }
 
-function wmOpen(){
-  wmTab('host');
-  $('#watchModal').classList.add('open');
+/* The modal is a <dialog> so it sits in the top layer ABOVE the player dialog
+   (a plain <div> would open hidden behind it). */
+function wmOpen(tab){
+  wmTab(tab === 'join' ? 'join' : 'host');
+  const m = $('#watchModal');
+  if(!m.open) m.showModal();
+  if(tab === 'join') setTimeout(() => $('#wmJoinInput').focus(), 60);
 }
 function wmClose(){
-  $('#watchModal').classList.remove('open');
+  const m = $('#watchModal');
+  if(m.open) m.close();
+}
+function wmReset(){
   $('#wmJoinInput').value = '';
   $('#wmJoinStatus').textContent = '';
   $('#wmJoinStatus').className = 'wm-status';
 }
 
-$('#watchTogetherBtn').addEventListener('click', wmOpen);
+$('#watchTogetherBtn').addEventListener('click', () => wmOpen('host'));
+$('#joinRoomBtn').addEventListener('click', () => wmOpen('join'));
 $('#wmActionBtn').addEventListener('click', wmAction);
+$('#wmJoinInput').addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); wmJoin(); } });
 $('#watchModal').addEventListener('click', e => { if(e.target === $('#watchModal')) wmClose(); });
-document.addEventListener('keydown', e => { if(e.key === 'Escape' && $('#watchModal').classList.contains('open')) wmClose(); });
+$('#watchModal').addEventListener('close', wmReset);   // also fires on Esc
 </script>
 </body>
 </html>
