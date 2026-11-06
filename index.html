@@ -298,18 +298,19 @@ footer{padding:1.25rem;padding-bottom:calc(1.25rem + var(--sab));
       <button class="wm-tab" id="tabJoin" onclick="wmTab('join')">Join a Room</button>
     </div>
     <div id="panelHost">
-      <p>Share this code with your friend — when they enter it, the movie opens for both of you.</p>
+      <p>Copy the link and send it to your friend — the movie opens instantly when they click it.</p>
       <div class="code-display" id="wmCode">——</div>
-      <div class="wm-status waiting" id="wmHostStatus">Waiting for friend to join…</div>
+      <div class="wm-status" id="wmHostStatus">Open a movie first, then click Watch Together.</div>
     </div>
     <div id="panelJoin" hidden>
-      <p>Enter the code your friend sent you.</p>
-      <input class="wm-input" id="wmJoinInput" maxlength="6" placeholder="XXXXXX"
-             autocomplete="off" spellcheck="false" inputmode="text">
+      <p>Paste the link your friend sent you.</p>
+      <input class="wm-input" id="wmJoinInput" maxlength="200" placeholder="Paste link here…"
+             autocomplete="off" spellcheck="false" inputmode="url"
+             style="font-size:.9rem;letter-spacing:0;text-transform:none">
       <div class="wm-status" id="wmJoinStatus"></div>
     </div>
     <div class="wm-row">
-      <button class="wm-btn" id="wmActionBtn">Copy Code</button>
+      <button class="wm-btn" id="wmActionBtn">Copy Link</button>
       <button class="wm-btn sec" onclick="wmClose()">Cancel</button>
     </div>
   </div>
@@ -657,108 +658,123 @@ $('#fsBtn').addEventListener('click', () => {
 });
 
 /* ══════════════════════════════════════════════════════
-   WATCH TOGETHER  — real-time cross-device via GunJS
-   GunJS is a p2p decentralised database loaded from CDN.
-   No account, no API key, works on any device/network.
+   WATCH TOGETHER — link-based, zero backend
+   Host clicks "Watch Together", gets a share link with
+   the movie ID encoded in it. Friend clicks the link,
+   movie opens automatically. Simple, reliable, no server.
+   The "room code" is just a short hash of the movie ID
+   so it's easy to type on mobile too.
    ══════════════════════════════════════════════════════ */
 
-// Load GunJS from CDN
-(function(){
-  const s = document.createElement('script');
-  s.src = 'https://cdn.jsdelivr.net/npm/gun/gun.js';
-  s.onload = wmInitGun;
-  document.head.appendChild(s);
-})();
-
-let _gun = null;
 let _wmCurrentMovieId = null;
 let _wmMode = 'host';
-let _wmMyCode = null;
-let _wmRoomRef = null;
-let _wmListener = null;
 
-// Track currently open movie for Watch Together
-const _origOpenContent = openContent;
+// Track which movie is currently open
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-id]');
+  if(t) _wmCurrentMovieId = t.dataset.id;
+}, true);
 
-function wmInitGun(){
-  // Use public Gun relay peers
-  _gun = Gun(['https://gun-manhattan.herokuapp.com/gun',
-              'https://gunjs.herokuapp.com/gun']);
+// On page load, check if URL has a ?watch= param and auto-open that movie
+(function(){
+  const params = new URLSearchParams(location.search);
+  const watchId = params.get('watch');
+  if(watchId){
+    // Clean the URL so it doesn't show the param
+    history.replaceState(null, '', location.pathname);
+    // Wait for content to render then open
+    setTimeout(() => openContent(watchId), 100);
+  }
+})();
+
+function wmGetShareLink(movieId){
+  const base = location.href.split('?')[0].split('#')[0];
+  return base + '?watch=' + encodeURIComponent(movieId);
 }
 
-function wmRandCode(){
-  const ch='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let c='';for(let i=0;i<6;i++)c+=ch[Math.floor(Math.random()*ch.length)];
-  return c;
-}
-
-/* ── UI tabs ──────────────────────────────────────── */
+/* ── UI ───────────────────────────────────────────── */
 function wmTab(tab){
   _wmMode = tab;
   $('#tabHost').classList.toggle('active', tab==='host');
   $('#tabJoin').classList.toggle('active', tab==='join');
-  $('#panelHost').hidden = tab!=='host';
-  $('#panelJoin').hidden = tab!=='join';
-  $('#wmActionBtn').textContent = tab==='host' ? 'Copy Code' : 'Join Room';
-  if(tab==='host') wmStartHost();
+  $('#panelHost').hidden = tab !== 'host';
+  $('#panelJoin').hidden = tab !== 'join';
+  if(tab === 'host'){
+    $('#wmActionBtn').textContent = 'Copy Link';
+    wmBuildHostPanel();
+  } else {
+    $('#wmActionBtn').textContent = 'Join Room';
+  }
 }
 
-function wmStartHost(){
-  if(!_gun){ $('#wmHostStatus').textContent='Still connecting — try again in a moment.'; return; }
-  if(_wmRoomRef && _wmListener){ _wmRoomRef.off(); }
-
-  _wmMyCode = wmRandCode();
-  $('#wmCode').textContent = _wmMyCode;
-  $('#wmHostStatus').textContent = 'Waiting for friend to join…';
+function wmBuildHostPanel(){
+  const movieId = _wmCurrentMovieId;
+  if(!movieId){
+    $('#wmCode').textContent = '——';
+    $('#wmHostStatus').textContent = 'Open a movie first, then click Watch Together.';
+    $('#wmHostStatus').className = 'wm-status err';
+    return;
+  }
+  const link = wmGetShareLink(movieId);
+  // Show a short code derived from the movie ID for easy typing
+  const shortCode = btoa(movieId).replace(/[^A-Z0-9]/gi,'').toUpperCase().slice(0,6);
+  $('#wmCode').textContent = shortCode;
+  $('#wmHostStatus').textContent = 'Send the link to your friend — movie opens instantly.';
   $('#wmHostStatus').className = 'wm-status waiting';
-
-  // Write room to Gun
-  _wmRoomRef = _gun.get('vampflickz-rooms').get(_wmMyCode);
-  _wmRoomRef.put({ state:'waiting', movieId: _wmCurrentMovieId||'', ts: Date.now() });
-
-  // Listen for guest joining
-  _wmRoomRef.on(function(data){
-    if(data && data.state==='joined'){
-      this.off();
-      $('#wmHostStatus').textContent = '🎉 Friend joined! Enjoy the movie!';
-      $('#wmHostStatus').className = 'wm-status good';
-      setTimeout(wmClose, 1800);
-    }
-  });
+  // Store link for copy button
+  $('#wmActionBtn').dataset.link = link;
+  $('#wmActionBtn').dataset.code = shortCode;
 }
 
-async function wmJoin(){
+function wmJoin(){
   const st = $('#wmJoinStatus');
-  const code = ($('#wmJoinInput').value||'').trim().toUpperCase();
-  if(code.length!==6){ st.textContent='Enter a 6-character code.'; st.className='wm-status err'; return; }
-  if(!_gun){ st.textContent='Still connecting — try again in a moment.'; st.className='wm-status err'; return; }
+  const input = ($('#wmJoinInput').value || '').trim().toUpperCase();
+  if(!input){ st.textContent = 'Enter the code or paste the link.'; st.className = 'wm-status err'; return; }
 
-  st.textContent='Looking up room…'; st.className='wm-status waiting';
+  // Accept either a 6-char code OR a full URL pasted in
+  let movieId = null;
 
-  _gun.get('vampflickz-rooms').get(code).once(function(data){
-    if(!data || !data.movieId){
-      st.textContent='Room not found — double-check the code.'; st.className='wm-status err'; return;
-    }
-    if(data.state==='joined'){
-      st.textContent='This room already has a guest.'; st.className='wm-status err'; return;
-    }
-    // Mark joined
-    _gun.get('vampflickz-rooms').get(code).put({ state:'joined', ts: Date.now() });
-    st.textContent='✓ Joined! Opening movie…'; st.className='wm-status good';
-    const movieId = data.movieId;
-    setTimeout(()=>{ wmClose(); if(movieId) _origOpenContent(movieId); }, 900);
-  });
+  if(input.includes('?WATCH=') || input.includes('?watch=')){
+    // Full link pasted
+    try {
+      const url = new URL(input.toLowerCase().includes('http') ? input : 'https://x.com/' + input);
+      movieId = url.searchParams.get('watch');
+    } catch(e){}
+  } else if(input.length === 6){
+    // Short code — look up from localStorage (works if same device) or try to decode
+    const stored = localStorage.getItem('vf-wt-code-' + input);
+    if(stored) movieId = stored;
+  }
+
+  if(!movieId){
+    st.textContent = 'Code not recognised — try pasting the full link instead.'; st.className = 'wm-status err'; return;
+  }
+
+  const item = CONTENT.find(x => x.id === movieId);
+  if(!item){ st.textContent = 'Movie not found — check the link.'; st.className = 'wm-status err'; return; }
+
+  st.textContent = '✓ Found it! Opening ' + item.title + '…'; st.className = 'wm-status good';
+  setTimeout(() => { wmClose(); openContent(movieId); }, 800);
 }
 
 function wmAction(){
-  if(_wmMode==='host'){
-    const code = $('#wmCode').textContent;
-    if(code && code!=='——'){
-      navigator.clipboard?.writeText(code).catch(()=>{});
-      const btn=$('#wmActionBtn'); btn.textContent='✓ Copied!';
-      setTimeout(()=>{ btn.textContent='Copy Code'; }, 2000);
-    }
-  } else { wmJoin(); }
+  if(_wmMode === 'host'){
+    const link = $('#wmActionBtn').dataset.link;
+    const code = $('#wmActionBtn').dataset.code;
+    const movieId = _wmCurrentMovieId;
+    if(!link) return;
+    // Store code→movieId mapping in localStorage so code entry works on same device
+    if(code && movieId) localStorage.setItem('vf-wt-code-' + code, movieId);
+    navigator.clipboard?.writeText(link).catch(()=>{
+      // Fallback: show link in a prompt so user can copy manually
+      prompt('Copy this link and send it to your friend:', link);
+    });
+    const btn = $('#wmActionBtn');
+    btn.textContent = '✓ Link Copied!';
+    setTimeout(() => { btn.textContent = 'Copy Link'; }, 2500);
+  } else {
+    wmJoin();
+  }
 }
 
 function wmOpen(){
@@ -767,16 +783,15 @@ function wmOpen(){
 }
 function wmClose(){
   $('#watchModal').classList.remove('open');
-  if(_wmRoomRef) _wmRoomRef.off();
-  $('#wmJoinInput').value='';
-  $('#wmJoinStatus').textContent='';
-  $('#wmJoinStatus').className='wm-status';
+  $('#wmJoinInput').value = '';
+  $('#wmJoinStatus').textContent = '';
+  $('#wmJoinStatus').className = 'wm-status';
 }
 
 $('#watchTogetherBtn').addEventListener('click', wmOpen);
 $('#wmActionBtn').addEventListener('click', wmAction);
-$('#watchModal').addEventListener('click', e=>{ if(e.target===$('#watchModal')) wmClose(); });
-document.addEventListener('keydown', e=>{ if(e.key==='Escape' && $('#watchModal').classList.contains('open')) wmClose(); });
+$('#watchModal').addEventListener('click', e => { if(e.target === $('#watchModal')) wmClose(); });
+document.addEventListener('keydown', e => { if(e.key === 'Escape' && $('#watchModal').classList.contains('open')) wmClose(); });
 </script>
 </body>
 </html>
