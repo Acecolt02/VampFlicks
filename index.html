@@ -158,7 +158,6 @@ dialog::backdrop{background:#04020bf8}
 .player-meta h3{font:600 1.05rem var(--display);margin-bottom:.15rem}
 .player-meta p{color:var(--dim);font-size:.9rem;max-width:55ch}
 .tip{margin-top:.35rem;font-size:.8rem;color:#8a7aa8}
-.tip a{color:var(--cyan);text-decoration:underline}
 .close-btn{cursor:pointer;background:none;border:1px solid var(--line);border-radius:7px;
   padding:.35rem .9rem;min-height:40px;flex:none;
   transition:border-color .2s;font-size:.9rem;-webkit-tap-highlight-color:transparent}
@@ -291,7 +290,7 @@ footer{padding:1.25rem;padding-bottom:calc(1.25rem + var(--sab));
         <div>
           <h3 id="pTitle"></h3>
           <p id="pDesc"></p>
-          <p class="tip">Video not loading or asking you to sign in? <a id="driveLink" href="#" target="_blank" rel="noopener" hidden>Open it in Google Drive ↗</a><br>Newly uploaded files can take a minute to finish processing.</p>
+          <p class="tip">Video not loading? The file may still be processing — wait a minute and try again.</p>
           <button class="watch-btn" id="watchTogetherBtn">👥 Watch Together</button>
         </div>
         <button class="close-btn" id="closeBtn">✕ Close</button>
@@ -474,11 +473,6 @@ const $ = s => document.querySelector(s);
 const dlg = $('#playerDialog'), vidWrap = $('#vidWrap');
 const fsBtnEl = $('#fsBtn');
 // Swap the video area's contents but keep the fullscreen button alive
-function setDriveLink(fid){
-  const a = $('#driveLink'); if(!a) return;
-  if(fid){ a.href = 'https://drive.google.com/file/d/' + encodeURIComponent(fid) + '/view'; a.hidden = false; }
-  else { a.hidden = true; }
-}
 function setVid(html){ vidWrap.innerHTML = html; vidWrap.appendChild(fsBtnEl); }
 
 function esc(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -536,7 +530,9 @@ function renderHero(){
    ══════════════════════════════════════════════════════ */
 function embedFrame(fileId, title=''){
   return `<iframe src="https://drive.google.com/file/d/${encodeURIComponent(fileId)}/preview"
-    allow="autoplay;fullscreen" allowfullscreen title="${esc(title)}"></iframe>`;
+    allow="autoplay;fullscreen" allowfullscreen title="${esc(title)}"
+    sandbox="allow-scripts allow-same-origin allow-forms"
+    referrerpolicy="no-referrer"></iframe>`;
 }
 
 function noFileMsg(msg='This video isn\'t available yet — check back soon.'){
@@ -558,7 +554,6 @@ async function openContent(id){
     // Direct file link wins; otherwise open Drive folder
     const fid = driveId(item.drive);
     setVid(fid ? embedFrame(fid, item.title) : noFileMsg());
-    setDriveLink(fid);
 
   } else {
     // TV show — season + episode picker
@@ -589,7 +584,6 @@ async function openContent(id){
         if(!ep){ setVid(noFileMsg('No episode link yet.')); return; }
         const fid = driveId(ep.drive);
         setVid(fid ? embedFrame(fid, ep.label) : noFileMsg('Episode link not added yet.'));
-        setDriveLink(fid);
       }
 
       function populateEpisodes(){
@@ -614,7 +608,7 @@ async function openContent(id){
 }
 
 function closePlayer(){
-  setVid(''); setDriveLink(null);
+  setVid('');
   if(dlg.open) dlg.close();
   history.replaceState(null,'',location.pathname+location.search);
 }
