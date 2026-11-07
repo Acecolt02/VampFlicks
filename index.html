@@ -130,9 +130,10 @@ dialog::backdrop{background:#04020bf8}
   padding-top:56.25%;/* 16:9 */
   background:#000;flex-shrink:0}
 .vid-wrap iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block}
+.vid-wrap video{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;background:#000;outline:none}
 /* Cover the Drive "open in new tab" button top-right */
 .vid-wrap::after{content:"";position:absolute;top:0;right:0;
-  width:72px;height:56px;z-index:2;background:transparent;pointer-events:all}
+  width:72px;height:56px;z-index:2;background:transparent;pointer-events:none}
 
 /* Scrollable info section on mobile */
 .player-bottom{padding:.75rem 1rem 1rem;overflow-y:auto;
@@ -291,7 +292,10 @@ footer{padding:1.25rem;padding-bottom:calc(1.25rem + var(--sab));
           <h3 id="pTitle"></h3>
           <p id="pDesc"></p>
           <p class="tip">Video not loading? The file may still be processing — wait a minute and try again.</p>
-          <button class="watch-btn" id="watchTogetherBtn">👥 Watch Together</button>
+          <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-top:.35rem">
+            <button class="watch-btn" id="watchTogetherBtn">👥 Watch Together</button>
+            <button class="watch-btn" id="togglePlayerBtn" style="display:none;border-color:var(--dim);color:var(--dim);box-shadow:none">🔄 Switch Player</button>
+          </div>
         </div>
         <button class="close-btn" id="closeBtn">✕ Close</button>
       </div>
@@ -332,6 +336,12 @@ footer{padding:1.25rem;padding-bottom:calc(1.25rem + var(--sab));
    ══════════════════════════════════════════════════════ */
 
 const PASSCODE = '69BigBalls';
+
+// Stream Proxy URL (Cloudflare Worker).
+// When set, VampFlicks streams Google Drive files directly in a clean HTML5 <video> player,
+// bypassing Google's view limits, anonymous quotas, and sign-in popups.
+// Example: 'https://vampflicks-stream.yourname.workers.dev'
+const STREAM_PROXY_URL = 'https://vampflicks-stream.acecolt02.workers.dev';
 
 /* ── CONTENT ─────────────────────────────────────────────────────────
    For movies:  set "drive" to the individual video file share link.
@@ -528,11 +538,59 @@ function renderHero(){
 /* ══════════════════════════════════════════════════════
    OPEN CONTENT
    ══════════════════════════════════════════════════════ */
+let _currentFileId = null;
+let _currentTitle = '';
+let _playerMode = 'native'; // 'native' (HTML5 video) or 'embed' (Drive preview)
+
+function getStreamUrl(fileId){
+  if(!fileId || !STREAM_PROXY_URL) return null;
+  return STREAM_PROXY_URL.replace(/\/+$/, '') + '/stream/' + encodeURIComponent(fileId);
+}
+
 function embedFrame(fileId, title=''){
   return `<iframe src="https://drive.google.com/file/d/${encodeURIComponent(fileId)}/preview"
     allow="autoplay;fullscreen" allowfullscreen title="${esc(title)}"
-    sandbox="allow-scripts allow-same-origin allow-forms"
-    referrerpolicy="no-referrer"></iframe>`;
+    sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation"></iframe>`;
+}
+
+function nativeVideoTag(streamUrl, title=''){
+  return `<video id="nativeVideo" controls playsinline preload="metadata" title="${esc(title)}">
+    <source src="${esc(streamUrl)}" type="video/mp4">
+    Your browser does not support HTML5 video streaming.
+  </video>`;
+}
+
+function renderPlayer(fileId, title=''){
+  _currentFileId = fileId;
+  _currentTitle = title;
+  const toggleBtn = $('#togglePlayerBtn');
+
+  if(!fileId){
+    setVid(noFileMsg());
+    if(toggleBtn) toggleBtn.style.display = 'none';
+    return;
+  }
+
+  const streamUrl = getStreamUrl(fileId);
+  if(toggleBtn){
+    toggleBtn.style.display = STREAM_PROXY_URL ? 'inline-flex' : 'none';
+    toggleBtn.textContent = (_playerMode === 'native') ? '🌐 Switch to Embed' : '📺 Switch to Native';
+  }
+
+  if(STREAM_PROXY_URL && _playerMode === 'native' && streamUrl){
+    setVid(nativeVideoTag(streamUrl, title));
+    const vid = document.getElementById('nativeVideo');
+    if(vid){
+      vid.addEventListener('error', () => {
+        console.warn('Native video playback encountered an error, falling back to embed player.');
+        _playerMode = 'embed';
+        if(toggleBtn) toggleBtn.textContent = '📺 Switch to Native';
+        setVid(embedFrame(fileId, title));
+      }, { once: true });
+    }
+  } else {
+    setVid(embedFrame(fileId, title));
+  }
 }
 
 function noFileMsg(msg='This video isn\'t available yet — check back soon.'){
@@ -551,9 +609,8 @@ async function openContent(id){
   epRow.innerHTML = '';
 
   if(item.type==='movie'){
-    // Direct file link wins; otherwise open Drive folder
     const fid = driveId(item.drive);
-    setVid(fid ? embedFrame(fid, item.title) : noFileMsg());
+    renderPlayer(fid, item.title);
 
   } else {
     // TV show — season + episode picker
@@ -583,7 +640,7 @@ async function openContent(id){
         const ep  = eps[+epSel.value];
         if(!ep){ setVid(noFileMsg('No episode link yet.')); return; }
         const fid = driveId(ep.drive);
-        setVid(fid ? embedFrame(fid, ep.label) : noFileMsg('Episode link not added yet.'));
+        renderPlayer(fid, ep.label);
       }
 
       function populateEpisodes(){
@@ -608,7 +665,10 @@ async function openContent(id){
 }
 
 function closePlayer(){
+  const vid = document.getElementById('nativeVideo');
+  if(vid) { vid.pause(); vid.removeAttribute('src'); vid.load(); }
   setVid('');
+  _currentFileId = null;
   if(dlg.open) dlg.close();
   history.replaceState(null,'',location.pathname+location.search);
 }
@@ -621,6 +681,13 @@ document.addEventListener('click', e => {
   if(t){ _wmCurrentMovieId = t.dataset.id; openContent(t.dataset.id); }
 });
 $('#closeBtn').addEventListener('click', closePlayer);
+const toggleBtnEl = $('#togglePlayerBtn');
+if(toggleBtnEl){
+  toggleBtnEl.addEventListener('click', () => {
+    _playerMode = (_playerMode === 'native') ? 'embed' : 'native';
+    if(_currentFileId) renderPlayer(_currentFileId, _currentTitle);
+  });
+}
 $('#playerDialog').addEventListener('cancel', e => { e.preventDefault(); closePlayer(); });
 $('#playerDialog').addEventListener('click', e => { if(e.target===$('#playerDialog')) closePlayer(); });
 $('#searchBox').addEventListener('input', e => {

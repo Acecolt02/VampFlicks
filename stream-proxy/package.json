@@ -1,0 +1,13 @@
+{
+  "name": "vampflicks-stream-proxy",
+  "version": "1.0.0",
+  "description": "Google Drive Video Stream Proxy for VampFlicks",
+  "main": "worker.js",
+  "scripts": {
+    "start": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^3.100.0"
+  }
+}
