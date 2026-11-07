@@ -157,7 +157,8 @@ dialog::backdrop{background:#04020bf8}
   gap:.6rem;flex-wrap:wrap}
 .player-meta h3{font:600 1.05rem var(--display);margin-bottom:.15rem}
 .player-meta p{color:var(--dim);font-size:.9rem;max-width:55ch}
-.tip{margin-top:.35rem;font-size:.8rem;color:#5a4d72}
+.tip{margin-top:.35rem;font-size:.8rem;color:#8a7aa8}
+.tip a{color:var(--cyan);text-decoration:underline}
 .close-btn{cursor:pointer;background:none;border:1px solid var(--line);border-radius:7px;
   padding:.35rem .9rem;min-height:40px;flex:none;
   transition:border-color .2s;font-size:.9rem;-webkit-tap-highlight-color:transparent}
@@ -290,7 +291,7 @@ footer{padding:1.25rem;padding-bottom:calc(1.25rem + var(--sab));
         <div>
           <h3 id="pTitle"></h3>
           <p id="pDesc"></p>
-          <p class="tip">Video not loading? The file may still be processing — wait a minute and try again.</p>
+          <p class="tip">Video not loading or asking you to sign in? <a id="driveLink" href="#" target="_blank" rel="noopener" hidden>Open it in Google Drive ↗</a><br>Newly uploaded files can take a minute to finish processing.</p>
           <button class="watch-btn" id="watchTogetherBtn">👥 Watch Together</button>
         </div>
         <button class="close-btn" id="closeBtn">✕ Close</button>
@@ -473,6 +474,11 @@ const $ = s => document.querySelector(s);
 const dlg = $('#playerDialog'), vidWrap = $('#vidWrap');
 const fsBtnEl = $('#fsBtn');
 // Swap the video area's contents but keep the fullscreen button alive
+function setDriveLink(fid){
+  const a = $('#driveLink'); if(!a) return;
+  if(fid){ a.href = 'https://drive.google.com/file/d/' + encodeURIComponent(fid) + '/view'; a.hidden = false; }
+  else { a.hidden = true; }
+}
 function setVid(html){ vidWrap.innerHTML = html; vidWrap.appendChild(fsBtnEl); }
 
 function esc(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -552,6 +558,7 @@ async function openContent(id){
     // Direct file link wins; otherwise open Drive folder
     const fid = driveId(item.drive);
     setVid(fid ? embedFrame(fid, item.title) : noFileMsg());
+    setDriveLink(fid);
 
   } else {
     // TV show — season + episode picker
@@ -582,6 +589,7 @@ async function openContent(id){
         if(!ep){ setVid(noFileMsg('No episode link yet.')); return; }
         const fid = driveId(ep.drive);
         setVid(fid ? embedFrame(fid, ep.label) : noFileMsg('Episode link not added yet.'));
+        setDriveLink(fid);
       }
 
       function populateEpisodes(){
@@ -606,7 +614,7 @@ async function openContent(id){
 }
 
 function closePlayer(){
-  setVid('');
+  setVid(''); setDriveLink(null);
   if(dlg.open) dlg.close();
   history.replaceState(null,'',location.pathname+location.search);
 }
@@ -629,10 +637,20 @@ $('#searchBox').addEventListener('input', e => {
 /* ══════════════════════════════════════════════════════
    BOOT
    ══════════════════════════════════════════════════════ */
+// Invite link (?watch=id): remembered at load, but only opened AFTER the passcode gate is passed
+var _inviteId = null;
+try { _inviteId = new URLSearchParams(location.search).get('watch'); } catch(e){}
+
 function start(){
   renderHero();
   renderAll(CONTENT);
-  if(location.hash.length>1) openContent(decodeURIComponent(location.hash.slice(1)));
+  if(_inviteId){
+    const id = _inviteId; _inviteId = null;
+    history.replaceState(null,'',location.pathname);
+    openContent(id);
+  } else if(location.hash.length>1){
+    openContent(decodeURIComponent(location.hash.slice(1)));
+  }
 }
 
 if(PASSCODE){
@@ -687,17 +705,7 @@ document.addEventListener('click', e => {
   if(t) _wmCurrentMovieId = t.dataset.id;
 }, true);
 
-// On page load, check if URL has a ?watch= param and auto-open that movie
-(function(){
-  const params = new URLSearchParams(location.search);
-  const watchId = params.get('watch');
-  if(watchId){
-    // Clean the URL so it doesn't show the param
-    history.replaceState(null, '', location.pathname);
-    // Wait for content to render then open
-    setTimeout(() => openContent(watchId), 100);
-  }
-})();
+
 
 /* Room codes: a 6-char code computed from each title's ID (FNV-1a hash,
    unambiguous alphabet). Every device has the same CONTENT list, so every
